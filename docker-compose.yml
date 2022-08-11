@@ -1,0 +1,8 @@
+version: '3.4'
+
+services:
+  afmtodatafed:
+    image: afmtodatafed
+    build:
+      context: .
+      dockerfile: ./Dockerfile
