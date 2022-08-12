@@ -71,7 +71,7 @@ def _send_ibw_to_datafed(file_name, collection_id):
         # sends the put command
         put_resp = df_api.dataPut(rec_id,
                                     file_name,
-                                    wait = False)
+                                    wait = True)
     except Exception:
         print('Could not intiate globus transfer')
 
