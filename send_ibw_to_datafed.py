@@ -2,6 +2,7 @@ import argparse
 from util import *
 from datafed.CommandLib import API
 import os
+import glob
 
 def _send_ibw_to_datafed(file_name, collection_id):
     df_api = API()
@@ -82,4 +83,15 @@ if __name__ == "__main__":
     parser.add_argument("collection_id", help="This is the name of the collection ID where the file will be saved on DataFed")
     args = parser.parse_args()
 
-    _send_ibw_to_datafed(args.file_name, args.collection_id)
+    if os.path.isdir(args.file_name):
+
+        file_name = r'C:\Users\Joshua Agar\OneDrive - Drexel University\Documents\Data_Analysis\AFM_to_DataFed\test_data'
+
+        if os.path.isdir(args.file_name):
+            file_list = glob.glob(args.file_name + "\**\*.ibw", recursive= True)
+
+            for file in file_list:
+                _send_ibw_to_datafed(file, args.collection_id)
+        
+        else:
+            _send_ibw_to_datafed(args.file_name, args.collection_id)
