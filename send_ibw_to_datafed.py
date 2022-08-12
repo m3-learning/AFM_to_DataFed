@@ -53,7 +53,7 @@ def _send_ibw_to_datafed(file_name, collection_id):
     try:
         # creates a new data record
         dc_resp = df_api.dataCreate(os.path.basename(file_name), # file name
-                                # metadata=json.dumps(json_output), # metadata
+                                metadata=json.dumps(json_output), # metadata
                                 parent_id=collection_id, # parent collection
                             )
     except Exception:
