@@ -91,7 +91,10 @@ if __name__ == "__main__":
             file_list = glob.glob(args.file_name + "\**\*.ibw", recursive= True)
 
             for file in file_list:
-                _send_ibw_to_datafed(file, args.collection_id)
+                try:
+                    _send_ibw_to_datafed(file, args.collection_id)
+                except:
+                    pass
         
         else:
             _send_ibw_to_datafed(args.file_name, args.collection_id)
