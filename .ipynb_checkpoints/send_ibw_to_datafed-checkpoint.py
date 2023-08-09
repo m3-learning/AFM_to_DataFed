@@ -3,39 +3,17 @@ from util import *
 from datafed.CommandLib import API
 import os
 import glob
-import getpass
-
-# Initialize the API object
-df_api = API()
-
-
-def DataFed_Log_In():
-
-    # Prompt for user ID and password
-    uid = input("User ID: ")
-    password = getpass.getpass(prompt="Password: ")
-
-    try:
-        # Attempt to log in using provided credentials
-        df_api.loginByPassword(uid, password)
-        success = f"Successfully logged in to Data as {df_api.getAuthUser()}"
-    except:
-        success = "Could not log into DataFed. Check your internet connection, username, and password"
-
-    return success
 
 def _send_ibw_to_datafed(file_name, collection_id):
-
-    login_result = DataFed_Log_In()
-    print(login_result)
-
+    df_api = API()
+    
     json_output = get_metadata(file_name)
 
     print(file_name)
     print(collection_id)
 
     # This removes flattening information and fixes inf values in metadata
-    try:
+    try: 
         del json_output['Flatten Offsets 0']
     except:
         pass
@@ -50,12 +28,12 @@ def _send_ibw_to_datafed(file_name, collection_id):
     except:
         pass
 
-    try:
+    try: 
         del json_output['Flatten Offsets 4']
     except:
         pass
 
-    try:
+    try: 
         del json_output['Flatten Offsets 1']
     except:
         pass
@@ -75,15 +53,15 @@ def _send_ibw_to_datafed(file_name, collection_id):
 
     try:
         # creates a new data record
-        dc_resp = df_api.dataCreate(file_name, # file name
+        dc_resp = df_api.dataCreate(os.path.basename(file_name), # file name
                                 metadata=json.dumps(json_output), # metadata
                                 parent_id=collection_id, # parent collection
                             )
-    except Exception as e:
+    except Exception:
 
-        print('There was an error creating the DataRecord', e)
+        print('There was an error creating the DataRecord')
 
-    try:
+    try: 
         # extracts the record ID
         rec_id = dc_resp[0].data[0].id
     except ValueError:
@@ -98,7 +76,25 @@ def _send_ibw_to_datafed(file_name, collection_id):
         print('Could not intiate globus transfer')
 
 if __name__ == "__main__":
-    try:
-        _send_ibw_to_datafed(file_name= r"C:\Users\Asylum User\Documents\Asylum Research Data\230802\Image0005.ibw", collection_id= r"c/u_ysp28_root")
-    except:
-        pass
+    parser = argparse.ArgumentParser(
+        description="This is a function that sends ibw files from Oxford Instruments Asylum Research Atomic Force Microscopes to DataFed"
+    )
+    parser.add_argument("file_name", help="This is the name of the full file path")
+    parser.add_argument("collection_id", help="This is the name of the collection ID where the file will be saved on DataFed")
+    args = parser.parse_args()
+
+    if os.path.isdir(args.file_name):
+
+        file_name = r'C:\Users\Joshua Agar\OneDrive - Drexel University\Documents\Data_Analysis\AFM_to_DataFed\test_data'
+
+        if os.path.isdir(args.file_name):
+            file_list = glob.glob(args.file_name + "\**\*.ibw", recursive= True)
+
+            for file in file_list:
+                try:
+                    _send_ibw_to_datafed(file, args.collection_id)
+                except:
+                    pass
+        
+        else:
+            _send_ibw_to_datafed(args.file_name, args.collection_id)
