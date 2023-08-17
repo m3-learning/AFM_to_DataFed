@@ -1,17 +1,32 @@
 import argparse
-from util import *
 from datafed.CommandLib import API
+from util import *
 import os
 import glob
 import getpass
 
 # Initialize the API object
 df_api = API()
+# def delete_datafed_key_files(directory):
+#     priv_key_file = os.path.join(directory, 'datafed-user-key.priv')
+#     pub_key_file = os.path.join(directory, 'datafed-user-key.pub')
 
+#     if os.path.exists(priv_key_file):
+#         os.remove(priv_key_file)
+#         print("Deleted datafed-user-key.priv")
+
+#     if os.path.exists(pub_key_file):
+#         os.remove(pub_key_file)
+#         print("Deleted datafed-user-key.pub")
+
+# directory_path = r'C:\Users\Asylum User\.datafed'
 
 def DataFed_Log_In():
 
-    # Prompt for user ID and password
+    # if df_api.getAuthUser() is not None:
+    #     delete_datafed_key_files(directory_path)
+    # else:
+
     uid = input("User ID: ")
     password = getpass.getpass(prompt="Password: ")
 
@@ -19,15 +34,14 @@ def DataFed_Log_In():
         # Attempt to log in using provided credentials
         df_api.loginByPassword(uid, password)
         success = f"Successfully logged in to Data as {df_api.getAuthUser()}"
+        if df_api.getAuthUser() is not None:
+            df_api.setupCredentials()
     except:
         success = "Could not log into DataFed. Check your internet connection, username, and password"
 
     return success
 
 def _send_ibw_to_datafed(file_name, collection_id):
-
-    login_result = DataFed_Log_In()
-    print(login_result)
 
     json_output = get_metadata(file_name)
 
@@ -96,8 +110,23 @@ def _send_ibw_to_datafed(file_name, collection_id):
     except Exception:
         print('Could not intiate globus transfer')
 
+
 if __name__ == "__main__":
-    try:
-        _send_ibw_to_datafed(file_name= r"C:\Users\Asylum User\Documents\Asylum Research Data\230802\Image0007.ibw", collection_id= r"c/u_ysp28_root")
-    except:
-        pass
+
+    # parser = argparse.ArgumentParser()
+    # parser.add_argument("square", help="display a square of a given number",
+    #                     type=int)
+    # args = parser.parse_args()
+    # print(args.square**2)
+
+    parser = argparse.ArgumentParser(description="Send IBW data to DataFed")
+
+    parser.add_argument("file_name", help="Path to the IBW file")
+    parser.add_argument("collection_id", help="ID of the parent collection")
+
+    args = parser.parse_args()
+
+    login_result = DataFed_Log_In()
+    print(login_result)
+
+    _send_ibw_to_datafed(file_name=args.file_name, collection_id=args.collection_id)
