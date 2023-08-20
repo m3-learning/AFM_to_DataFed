@@ -7,25 +7,9 @@ import getpass
 
 # Initialize the API object
 df_api = API()
-# def delete_datafed_key_files(directory):
-#     priv_key_file = os.path.join(directory, 'datafed-user-key.priv')
-#     pub_key_file = os.path.join(directory, 'datafed-user-key.pub')
 
-#     if os.path.exists(priv_key_file):
-#         os.remove(priv_key_file)
-#         print("Deleted datafed-user-key.priv")
-
-#     if os.path.exists(pub_key_file):
-#         os.remove(pub_key_file)
-#         print("Deleted datafed-user-key.pub")
-
-# directory_path = r'C:\Users\Asylum User\.datafed'
 
 def DataFed_Log_In():
-
-    # if df_api.getAuthUser() is not None:
-    #     delete_datafed_key_files(directory_path)
-    # else:
 
     uid = input("User ID: ")
     password = getpass.getpass(prompt="Password: ")
@@ -113,11 +97,7 @@ def _send_ibw_to_datafed(file_name, collection_id):
 
 if __name__ == "__main__":
 
-    # parser = argparse.ArgumentParser()
-    # parser.add_argument("square", help="display a square of a given number",
-    #                     type=int)
-    # args = parser.parse_args()
-    # print(args.square**2)
+
 
     parser = argparse.ArgumentParser(description="Send IBW data to DataFed")
 
@@ -126,7 +106,5 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    login_result = DataFed_Log_In()
-    print(login_result)
 
     _send_ibw_to_datafed(file_name=args.file_name, collection_id=args.collection_id)

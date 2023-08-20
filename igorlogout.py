@@ -16,9 +16,5 @@ def delete_datafed_key_files(directory):
 
 
 if __name__ == "__main__":
-    try:
-       directory_path = r'C:\Users\Asylum User\.datafed'
-
-       delete_datafed_key_files(directory_path)
-    except:
-        pass
+    directory_path = r'C:\Users\Asylum User\.datafed'
+    delete_datafed_key_files(directory_path)
