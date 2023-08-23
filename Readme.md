@@ -18,7 +18,8 @@
 
 ## Runing Script
 
-run in the command line `python send_ibw_to_datafed.py "<full file path>" "<collection id on Datafed>"`
+run in the command line `python send_ibw_to_datafed.py "<full file path>" "<collection id on Datafed>"` 
+
 
 
 

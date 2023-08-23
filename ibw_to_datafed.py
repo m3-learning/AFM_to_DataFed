@@ -9,22 +9,6 @@ import getpass
 df_api = API()
 
 
-def DataFed_Log_In():
-
-    uid = input("User ID: ")
-    password = getpass.getpass(prompt="Password: ")
-
-    try:
-        # Attempt to log in using provided credentials
-        df_api.loginByPassword(uid, password)
-        success = f"Successfully logged in to Data as {df_api.getAuthUser()}"
-        if df_api.getAuthUser() is not None:
-            df_api.setupCredentials()
-    except:
-        success = "Could not log into DataFed. Check your internet connection, username, and password"
-
-    return success
-
 def _send_ibw_to_datafed(file_name, collection_id):
 
     json_output = get_metadata(file_name)

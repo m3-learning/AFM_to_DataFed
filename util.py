@@ -1,4 +1,4 @@
-from igor import binarywave as bw
+from memex.translators.igor import binarywave as bw
 import json
 import numpy as np
 
