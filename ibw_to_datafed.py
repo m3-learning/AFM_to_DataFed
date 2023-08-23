@@ -1,15 +1,24 @@
 import argparse
 from datafed.CommandLib import API
 from util import *
-import os
-import glob
-import getpass
+
 
 # Initialize the API object
 df_api = API()
 
 
 def _send_ibw_to_datafed(file_name, collection_id):
+    """This function takes an .ibw file and a datafed collection id, and using that it grabs the metadata from the file. 
+    The using the Datafed API it calls a funtion to create a new datarecord and name it the same name as your filepath, 
+    and assigns your metadata to the inputted collection id, and then using dataput it actually uploads all of the info to datafed.
+    this function only works if you have: Globus personal Connect set up, you have run datafed setup and assigned a globus endpoint,
+    and run DataFed_Log_In and logged as an authenticated user. 
+
+
+    Args:
+        file_name (_path_): _tthe local file path of your .ibw file and make sure you put r' becuase there will be escape characters _
+        collection_id (_type_): _the collection id name from your datafed where you want the file transfer to end up,and make sure you put r' becuase there will be escape characters _
+    """    
 
     json_output = get_metadata(file_name)
 

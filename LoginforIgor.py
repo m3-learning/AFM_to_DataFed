@@ -1,8 +1,5 @@
-import argparse
-from util import *
+#from util import *
 from datafed.CommandLib import API
-import os
-import glob
 import getpass
 
 # Initialize the API object
@@ -10,6 +7,14 @@ df_api = API()
 
 
 def DataFed_Log_In():
+    """This function allows for login to datafed using the datafed API and to ensure that you are able to sign into your account
+    run igorlogout before running this function to ensure there is no credentialled user before you login to start your transfer.
+    This function has you input your user id and then your password securely and then it 
+
+
+    Returns:
+        _type_: _description_
+    """    
 
     uid = input("User ID: ")
     password = getpass.getpass(prompt="Password: ")
