@@ -13,7 +13,7 @@ def DataFed_Log_In():
 
 
     Returns:
-        _type_: _description_
+        _type_: a print statement letting you know whether or not your login was successful 
     """    
 
     uid = input("User ID: ")
