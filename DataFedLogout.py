@@ -3,6 +3,18 @@ import os
 
 df_api = API()
 def delete_datafed_key_files(directory):
+    """
+    Delete DataFed user key files from the specified directory.
+
+    This function attempts to remove the DataFed user private key file and the associated
+    public key file from the provided directory. If the files exist, they are deleted,
+    and a message is printed for each deletion.
+
+    Args:
+        directory (str): The directory path where the DataFed user key files are located.
+
+    """
+
     priv_key_file = os.path.join(directory, 'datafed-user-key.priv')
     pub_key_file = os.path.join(directory, 'datafed-user-key.pub')
 
