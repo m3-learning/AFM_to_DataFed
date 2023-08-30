@@ -1,7 +1,7 @@
 from datafed.CommandLib import API
 import os
 
-df_api = API()
+# df_api = API()
 def delete_datafed_key_files(directory):
     """
     Delete DataFed user key files from the specified directory.

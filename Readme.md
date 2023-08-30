@@ -18,12 +18,14 @@
 1.  Find your globus endpoint ID and type the following command `datafed ep default set <endpoint_name_here>`
 1.  Done!
 
-## Runing Script
+## Running Script
 
 run in the command line `python DataFedLogin.py` and input your username and password when prompted, once "Successfully logged in to Data as {your username}" is printed you are free to upload as many files you want 
 this can be done by running this in the command line `python ibw_to_datafed.py "<full file path>" "<collection id on Datafed>"` as many times for as many files as you would like.
 when you are done uploading your files to maintain security please run `python DataFedLogout.py` this is to ensure your account does automatically sign in the next time someone tries to upload a file.
 
+
+## Using the Igor Panel 
 
 
 
