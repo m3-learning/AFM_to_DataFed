@@ -7,7 +7,7 @@ from util import *
 df_api = API()
 
 
-def _send_ibw_to_datafed(file_name, collection_id):
+def _send_ibw_to_datafed(data_record_name,file_path, collection_id):
     """This function takes an .ibw file and a datafed collection id, and using that it grabs the metadata from the file. 
     The using the Datafed API it calls a funtion to create a new datarecord and name it the same name as your filepath, 
     and assigns your metadata to the inputted collection id, and then using dataput it actually uploads all of the info to datafed.
@@ -16,14 +16,15 @@ def _send_ibw_to_datafed(file_name, collection_id):
 
 
     Args:
-        file_name (_path_): _tthe local file path of your .ibw file and make sure you put r' becuase there will be escape characters _
+        file_name (_path_): _the local file path of your .ibw file and make sure you put r' becuase there will be escape characters _
         collection_id (_type_): _the collection id name from your datafed where you want the file transfer to end up,and make sure you put r' becuase there will be escape characters _
     """    
 
-    json_output = get_metadata(file_name)
+    json_output = get_metadata(file_path)
 
-    print(file_name)
+    print(file_path)
     print(collection_id)
+    print(data_record_name)
 
     # This removes flattening information and fixes inf values in metadata
     try:
@@ -66,7 +67,7 @@ def _send_ibw_to_datafed(file_name, collection_id):
 
     try:
         # creates a new data record
-        dc_resp = df_api.dataCreate(file_name, # file name
+        dc_resp = df_api.dataCreate(data_record_name,alias=file_path, # file name
                                 metadata=json.dumps(json_output), # metadata
                                 parent_id=collection_id, # parent collection
                             )
@@ -82,7 +83,7 @@ def _send_ibw_to_datafed(file_name, collection_id):
     try:
         # sends the put command
         put_resp = df_api.dataPut(rec_id,
-                                    file_name,
+                                    file_path,
                                     wait = True)
     except Exception:
         print('Could not intiate globus transfer')
@@ -93,11 +94,12 @@ if __name__ == "__main__":
 
 
     parser = argparse.ArgumentParser(description="Send IBW data to DataFed")
-
-    parser.add_argument("file_name", help="Path to the IBW file")
+    
+    parser.add_argument("data_record_name", help="Desired Data Record name ")
+    parser.add_argument("file_path", help="Path to the IBW file")
     parser.add_argument("collection_id", help="ID of the parent collection")
 
     args = parser.parse_args()
 
 
-    _send_ibw_to_datafed(file_name=args.file_name, collection_id=args.collection_id)
+    _send_ibw_to_datafed(data_record_name=args.data_record_name, file_path=args.file_path, collection_id=args.collection_id)
