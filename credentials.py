@@ -1,3 +1,4 @@
+import yaml
 from cryptography.fernet import Fernet
 
 # Generate a random encryption key
@@ -35,8 +36,6 @@ cipher_suite = Fernet(encryption_key)
 decrypted_data = cipher_suite.decrypt(encrypted_data)
 
 # Convert the decrypted data to a YAML dictionary
-import yaml
-
 credentials = yaml.safe_load(decrypted_data)
 
 # Access the credentials

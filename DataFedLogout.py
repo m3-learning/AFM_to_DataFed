@@ -1,5 +1,5 @@
-from datafed.CommandLib import API
 import os
+
 
 # df_api = API()
 def delete_datafed_key_files(directory):
@@ -15,8 +15,8 @@ def delete_datafed_key_files(directory):
 
     """
 
-    priv_key_file = os.path.join(directory, 'datafed-user-key.priv')
-    pub_key_file = os.path.join(directory, 'datafed-user-key.pub')
+    priv_key_file = os.path.join(directory, "datafed-user-key.priv")
+    pub_key_file = os.path.join(directory, "datafed-user-key.pub")
 
     if os.path.exists(priv_key_file):
         os.remove(priv_key_file)
@@ -28,5 +28,5 @@ def delete_datafed_key_files(directory):
 
 
 if __name__ == "__main__":
-    directory_path = r'C:\Users\Asylum User\.datafed'
+    directory_path = r"C:\Users\Asylum User\.datafed"
     delete_datafed_key_files(directory_path)
