@@ -4,3 +4,4 @@ igor
 datafed
 protobuf==3.19.4
 sci-memex
+fastapi[standard]
