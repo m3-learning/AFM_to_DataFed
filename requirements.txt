@@ -1,6 +1,6 @@
 # To ensure app dependencies are ported from your virtual environment/host machine into your container, run 'pip freeze > requirements.txt' in the terminal to overwrite this file
 igor
 datafed
-protobuf==3.19.4
+protobuf
 sci-memex
 fastapi[standard]
