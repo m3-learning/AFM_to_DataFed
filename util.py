@@ -77,10 +77,6 @@ def _parse_file_path(self, input_path):
 def _read_data(self):
     pass
 
-
-# JSON Encoder
-
-
 class MyEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, np.integer):
@@ -103,32 +99,8 @@ def get_metadata(file_name):
     parm_dict = _read_parms(ibw_wave, parm_encoding)
     chan_labels, chan_units = _get_chan_labels(ibw_wave, parm_encoding)
 
-    # Main data
-    # images = ibw_wave.get('wData')
-
     # JSON serialize metadata
     metadata = json.dumps(parm_dict, cls=MyEncoder)
     metadata = json.loads(metadata)
-    # metadata.update({"File_path" : file_path})
 
     return metadata
-
-    # os.chdir(save_folder) #Specify save folder
-
-    # #Force curve
-    # if "ForceDist" in metadata.keys():
-    #     type_suffix ="ForceCurve"
-
-    #     with open(save_folder + save_name[idx].split('/')[-1] + type_suffix + '.JSON', 'w') as outfile:
-    #         json.dump(metadata, outfile)
-
-    #     np.save(save_folder + save_name[idx].split('/')[-1] + type_suffix + '.npy', images)
-
-    # #Image
-    # else:
-    #     type_suffix ="Image"
-
-    #     with open(save_folder + save_name[idx].split('/')[-1] + type_suffix + ".JSON", 'w') as outfile:
-    #         json.dump(metadata, outfile)
-
-    #     #np.save(save_folder + save_name[idx].split('/')[-1] + type_suffix + '.npy', images)
