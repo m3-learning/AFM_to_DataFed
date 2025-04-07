@@ -40,7 +40,6 @@ def send_file(file_path: str, collection_id: str,
               record_name: str | None = None):
     if not record_name:
         record_name = re.search(r'(.*\\|.*/)?(.+)\.ibw$', file_path).groups()[1]
-    print(record_name)
     return send_ibw_to_datafed(data_record_name=record_name,
                                file_path=file_path,
                                collection_id=collection_id)
@@ -171,7 +170,7 @@ def send_ibw_to_datafed(data_record_name, file_path, collection_id):
 
     try:
         # sends the put command
-        df_api.dataPut(rec_id, file_path, wait=True)
+        df_api.dataPut(rec_id, file_path, wait=False)
     except Exception as e:
         output['message'] = 'Could not intiate globus transfer'
         output['error'] = str(e)
