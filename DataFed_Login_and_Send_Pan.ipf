@@ -21,13 +21,13 @@ Window DataFedSendPanel() : Panel
 	SetVariable DataFed_coID,help={"The collection ID destination in DataFed"}
 	SetVariable DataFed_coID,font="Arial",value= _STR:"c/u_" + GetDataFedUser() + "_root"
 	SetVariable SaveImageSetVar_DF,pos={30,117},size={419,18},bodyWidth=387,proc=ARSavePathDFSetVarFunc,title="Path:"
-	SetVariable SaveImageSetVar_DF,help={"Folder Location of  the data that will be sent "}
+	SetVariable SaveImageSetVar_DF,help={"Folder Location of the data that will be sent "}
 	SetVariable SaveImageSetVar_DF,font="Arial",fSize=12
-	SetVariable SaveImageSetVar_DF,limits={-inf,inf,0},value= root:packages:MFP3D:Main:Strings:GlobalStrings[%SaveImage]
+	SetVariable SaveImageSetVar_DF,value=root:packages:MFP3D:Main:Strings:GlobalStrings[%SaveImage]
 	Button DataFedSendButton_1,pos={143,293},size={216,51},proc=ButtonSendProc,title="Send To DataFed"
 	Button DataFedSendButton_1,help={"Runs a script to send your file once you have hit enter on the collection ID, compiled the path,and you have logged in"}
 	Button DataFedSendButton_1,fSize=13,fStyle=1,fColor=(61440,61440,61440)
-	Button SaveImageBrowseButton,pos={399,82},size={100,25},proc=ARSaveDFPathButtonFunc,title="Browse"
+	Button SaveImageBrowseButton,pos={399,82},size={100,25},proc=PickDirectoryProc,title="Browse"
 	Button SaveImageBrowseButton,help={"Browse to set the file location"}
 	Button SaveImageBrowseButton,userdata(Pict)=  "ImageTab:Generic"
 	Button SaveImageBrowseButton,userdata(ButtonPictures)= A"A7]@]F_l.rBk)7\\8SqmKAQ3)I3_*b!ATDKpVeC!lATCU]@s\"M<D..'g<+05s7qHRLEbT#j88iZ_Ei3ksATMp(A5HuMFJPgREb0<5ARn>MG%G\\jBk)7\\VdEA6EbSruBmO>XBOPq&3i&Y"
@@ -104,6 +104,28 @@ Function/S IgorToWindowsPath(igorPath)
 	winPath = ReplaceString(":", igorPath, "\\\\")
 	winPath = winPath[0] + ":\\" + winPath[2,inf]
 	Return winPath
+End
+
+// Button action function
+Function PickDirectoryProc(ctrlName) : ButtonControl
+    String ctrlName
+    String chosenDir
+    String pathName = "userDirPath"
+
+    // Prompt user to choose a directory
+    NewPath/O/M="Choose a directory" $pathName
+    PathInfo $pathName
+
+    // Check if a path was set (user did not cancel)
+    if (strlen(S_path) > 0)
+        chosenDir = S_path
+        // Display in TitleBox (may truncate long paths)
+		SetVariable SaveImageSetVar_DF,value=chosenDir
+        //TitleBox DirDisplay title=chosenDir
+    else
+		SetVariable SaveImageSetVar_DF,value="No directory selected"
+        //TitleBox DirDisplay title="No directory selected"
+    endif
 End
 
 //===============================================================================================
