@@ -36,7 +36,7 @@ Window DataFedSendPanel() : Panel
 	Button Datafed_Logout,font="Arial",fSize=16,fStyle=1,fColor=(61440,61440,61440)
 	SetVariable DataFed_coID,pos={159,80},size={160,18},proc=SetCoIDProc
 	SetVariable DataFed_coID,help={"The collection ID destination in DataFed"}
-	SetVariable DataFed_coID,font="Arial",value= _STR:"c/" + GetDataFedUser() + "_root"
+	SetVariable DataFed_coID,font="Arial",value= _STR:"c/u_" + GetDataFedUser() + "_root"  ///////////////////////////////////////////////////////////////////////////////////////
 	SetVariable SaveImageSetVar_DF,pos={30,117},size={419,18},bodyWidth=387,proc=ARSavePathDFSetVarFunc,title="Path:"
 	SetVariable SaveImageSetVar_DF,help={"Folder Location of  the data that will be sent "}
 	SetVariable SaveImageSetVar_DF,font="Arial",fSize=12
@@ -93,7 +93,7 @@ Function/S LogOutOfDataFed()
 End
 
 Function/S GetDataFedUser()
-	return DoAPICall("get_user")
+	return DoAPICall("get_user")[2,inf]
 End
 
 Function/S DoAPICall(apiExtension)
@@ -130,7 +130,7 @@ Function/S ExtractMessage(message)
 	endif
 	Variable messageLoc = strsearch(message, "\"message\":", 0)
 	if (messageLoc >= 0)
-		out = message[+11,inf]
+		out = message[messageLoc+11,inf]
 		out = out[0,strsearch(out, "\"", 0)-1]
 	else
 		out = "API call failed: The server is down"
