@@ -4,11 +4,16 @@
 #pragma rtGlobals=3        // Use strict wave reference mode
 #endif 
 
-Window MainPanel() : Panel
+Window APITesting() : Panel
 	PauseUpdate; Silent 1		// building window...
 	NewPanel /W=(100,100,500,300) as "API Testing Panel"
 	Button GetUserButton,pos={50,50},size={120,30},proc=GetUserProc,title="Get User"
 	TitleBox UserLabel,pos={50,90},size={127,21},title="Updated Text Goes Here"
+	
+	// Create a TitleBox to display the selected path
+	TitleBox DirDisplay pos={20,20}, size={450,40}, title="No directory selected"
+	// Create a button to open the directory dialog
+	Button PickDirBtn pos={20,80}, size={200,30}, title="Select Directory", proc=PickDirectoryProc
 EndMacro
 
 Function GetUserProc(ctrlName) : ButtonControl
@@ -16,11 +21,6 @@ Function GetUserProc(ctrlName) : ButtonControl
 	String ctrlName
 	String content = GetDataFedUser()
 	TitleBox UserLabel,title=content
-    // Create a TitleBox to display the selected path
-    TitleBox DirDisplay pos={20,20}, size={450,40}, title="No directory selected"
-
-    // Create a button to open the directory dialog
-    Button PickDirBtn pos={20,80}, size={200,30}, title="Select Directory", proc=PickDirectoryProc
 End
 
 Function/S GetDataFedUser()
@@ -81,9 +81,11 @@ End
 Function PickDirectoryProc(ctrlName) : ButtonControl
     String ctrlName
     String chosenDir
+    String pathName = "userDirPath"
 
     // Prompt user to choose a directory
-    NewPath/O/Q/M="Choose a directory" tempPathName
+    NewPath/O/M="Choose a directory" $pathName
+    PathInfo $pathName
 
     // Check if a path was set (user did not cancel)
     if (strlen(S_path) > 0)
