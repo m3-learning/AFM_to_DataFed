@@ -131,4 +131,5 @@ dmypy.json
 *.txt
 *.ibw
 *.ipynb
+*.ipf~
 IgorPanelProccode
