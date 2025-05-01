@@ -8,25 +8,8 @@ Window DataFedSendPanel() : Panel
 	PauseUpdate; Silent 1		// building window...
 	NewPanel /K=1 /W=(1378,319,1906,1080) as "DataFed Login and Send"
 	ModifyPanel fixedSize=1
-	SetDrawLayer ProgBack
-	SetDrawEnv linethick= 3,linefgc= (0,0,39168),fillpat= 0
-	DrawRect 3,3,524.999877929688,758.000061035156
 	SetDrawLayer UserBack
 	DrawText 84,96,"Collection ID"
-	DrawText 96,369,"If Compile path and the full path are not updating try running  "
-	DrawText 36,385,"CheckandSetDataFolder() in the command window, before attempting anything else "
-	Button UserPanelRenameButton_0,pos={40,726},size={80,20},proc=ARUserPanelButtonFunc,title="Rename"
-	Button UserPanelRenameButton_0,userdata(ButtonPictures)= A"A7]@]F_l.rBk)7\\VeC!lATCU]@s\"NEE,oN2F(JlYBk)7\\Vf6ZfF)to'88iZ_E_pI[FJPgA;e9u`@;KY(AOC->EcX:;VZ"
-	Button UserPanelRenameButton_0,userdata= A":gnHZ3^Yr.F(KB53^Ih4CisS;<HD_l3^dmrF_t]-FE9K/F*VSED,OqdARTUhBKB.7ATCUUDImX*3]fo07S[B/ANE4fFC@XMA7&#KB5)6j@;]U_;e9iW?Vk0K/no9:4%Ne'AQ*#\\ARmhU3r"
-	Button UserPanelRenameButton_0,font="Arial",fSize=12,fColor=(61440,61440,61440)
-	Button UserPanelSaveButton_0,pos={140,726},size={80,20},proc=ARUserPanelButtonFunc,title="Save"
-	Button UserPanelSaveButton_0,userdata(ButtonPictures)= A"A7]@]F_l.rBk)7\\VeC!lATCU]@s\"NEE,oN2F(JlYBk)7\\Vf6ZfF)to'88iZ_E_pI[FJPgA;e9u`@;KY(AOC->EcX:;VZ"
-	Button UserPanelSaveButton_0,userdata= A":gnHZ3^Yr.F(KB53^Ih4CisS;<HD_l3^dmrF_t]-FE9K/F*VSED,OqdARTUhBKB.7ATCUUDImX*3]fo07S[B/ANE4fFC@XMA7&#KB5)6j@;]U_;e9iW?Vk0K/no9:4%Ne'AQ*#\\ARmhU3r"
-	Button UserPanelSaveButton_0,font="Arial",fSize=12,fColor=(61440,61440,61440)
-	PopupMenu UserPanelColorPop_0,pos={220,726},size={83,22},proc=ARUserPanelPopFunc,title="Color"
-	PopupMenu UserPanelColorPop_0,userdata= A";IsC70W.E]AS#bT0W.6RF_.@)3AEEOVdEA6EbSruBmO>XBOPq&3i&Y"
-	PopupMenu UserPanelColorPop_0,font="Arial",fSize=12
-	PopupMenu UserPanelColorPop_0,mode=1,popColor= (0,0,39168),value= #"\"*COLORPOP*\""
 	Button DataFedLoginButton_1,pos={100,22},size={129,39},proc=ButtonLoginProc,title="Log In"
 	Button DataFedLoginButton_1,help={"Calls a python script to log into DataFed on the command line and save the user credentials "}
 	Button DataFedLoginButton_1,font="Arial",fSize=16,fStyle=1
@@ -36,34 +19,14 @@ Window DataFedSendPanel() : Panel
 	Button Datafed_Logout,font="Arial",fSize=16,fStyle=1,fColor=(61440,61440,61440)
 	SetVariable DataFed_coID,pos={159,80},size={160,18},proc=SetCoIDProc
 	SetVariable DataFed_coID,help={"The collection ID destination in DataFed"}
-	SetVariable DataFed_coID,font="Arial",value= _STR:"c/u_" + GetDataFedUser() + "_root"  ///////////////////////////////////////////////////////////////////////////////////////
+	SetVariable DataFed_coID,font="Arial",value= _STR:"c/u_" + GetDataFedUser() + "_root"
 	SetVariable SaveImageSetVar_DF,pos={30,117},size={419,18},bodyWidth=387,proc=ARSavePathDFSetVarFunc,title="Path:"
 	SetVariable SaveImageSetVar_DF,help={"Folder Location of  the data that will be sent "}
 	SetVariable SaveImageSetVar_DF,font="Arial",fSize=12
 	SetVariable SaveImageSetVar_DF,limits={-inf,inf,0},value= root:packages:MFP3D:Main:Strings:GlobalStrings[%SaveImage]
-	SetVariable BaseNameSetVar_DF,pos={89,158},size={207,20},bodyWidth=207,proc=BaseNameSetDFVarFunc,title=" "
-	SetVariable BaseNameSetVar_DF,help={"BaseName of the image files"}
-	SetVariable BaseNameSetVar_DF,userdata= A"6tL=KDId<rF@0taFE2;9F#lWrF(J*TD.QXWFB2gj<*q=13r"
-	SetVariable BaseNameSetVar_DF,font="Arial",fSize=13
-	SetVariable BaseNameSetVar_DF,limits={-inf,inf,0},value= root:packages:MFP3D:Hardware:DF_basename,live= 1
-	TitleBox BaseNameSetVarT_0,pos={91,140},size={68,16},title="Base Name"
-	TitleBox BaseNameSetVarT_0,help={"BaseName of the image files, hit enter after you have chosen the correct suffix"}
-	TitleBox BaseNameSetVarT_0,labelBack=(62208,62208,62208),font="Arial",fSize=13
-	TitleBox BaseNameSetVarT_0,frame=0,fStyle=0
-	TitleBox BaseSuffixSetVarT_0,pos={332,143},size={32,16},title="Suffix"
-	TitleBox BaseSuffixSetVarT_0,help={"The Suffix of the Image file you would like to send"}
-	TitleBox BaseSuffixSetVarT_0,labelBack=(62208,62208,62208),font="Arial",fSize=13
-	TitleBox BaseSuffixSetVarT_0,frame=0,fStyle=0
-	SetVariable Fullpath,pos={40,260},size={436,16},bodyWidth=436,title=" "
-	SetVariable Fullpath,help={"This is the file path that will be used in the script to send the file to datafed make sure it is correct and the file exists"}
-	SetVariable Fullpath,fSize=6
-	SetVariable Fullpath,limits={-inf,inf,0},value= root:packages:MFP3D:Hardware:DF_fullpath
 	Button DataFedSendButton_1,pos={143,293},size={216,51},proc=ButtonSendProc,title="Send To DataFed"
 	Button DataFedSendButton_1,help={"Runs a script to send your file once you have hit enter on the collection ID, compiled the path,and you have logged in"}
 	Button DataFedSendButton_1,fSize=13,fStyle=1,fColor=(61440,61440,61440)
-	SetVariable BaseSuffixDF,pos={329,161},size={86,16},proc=SetSuffixProc
-	SetVariable BaseSuffixDF,help={"Make sure the suffix doesn't match up to the number in Save Options on the Master Panel. If it does it means the file you are trying to send doesn't exist"}
-	SetVariable BaseSuffixDF,format="%04d",limits={0,inf,1},value= _NUM:4
 	Button SaveImageBrowseButton,pos={399,82},size={100,25},proc=ARSaveDFPathButtonFunc,title="Browse"
 	Button SaveImageBrowseButton,help={"Browse to set the file location"}
 	Button SaveImageBrowseButton,userdata(Pict)=  "ImageTab:Generic"
@@ -74,9 +37,6 @@ Window DataFedSendPanel() : Panel
 	Button OpenImageButton_4,help={"Opens windows explorer at current save location"}
 	Button OpenImageButton_4,font="Arial",fSize=12,fColor=(61440,61440,61440)
 	Button OpenImageButton_4,picture= OpenFolder
-	Button CompPath,pos={147,194},size={194,41},proc=ButtonPathCompProc,title="Compile Path"
-	Button CompPath,help={"Press this button after putting in the correct suffix and basename and hitting enter on base name to update the full file path"}
-	Button CompPath,fSize=16,fStyle=1,fColor=(61440,61440,61440)
 	SetWindow kwTopWin,hook(AR)=UserCnTPanelHook
 	SetWindow kwTopWin,userdata(WindowPos)=  "Left:480;Top:442;"
 	SetWindow kwTopWin,userdata(WindowGroup)=  "OfflineProgramming"
