@@ -45,7 +45,17 @@ Function/S DoAPICallWithPB(apiExtension, postBody)
 	Open /R /T="TEXT" refNum as igorFile
 	FReadLine refNum, content
 	Close refNum
-	Return content
+	Return ExtractMessage(content)
+End
+
+Function/S ExtractMessage(message)
+	String message
+	if (strsearch(message, "\"error\":", 0) >= 0)
+		return "API call failed: " + message
+	endif
+	String out = message[strsearch(message, "\"message\":", 0)+11,inf]
+	out = out[0,strsearch(out, "\"", 0)-1]
+	return out
 End
 
 Function/S IgorToWindowsPath(igorPath)
