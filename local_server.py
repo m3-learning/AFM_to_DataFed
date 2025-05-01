@@ -44,6 +44,11 @@ def send_file(file_path: str, collection_id: str,
                                file_path=file_path,
                                collection_id=collection_id)
 
+@app.get('/get_user')
+@app.get('/get_user/')
+def get_user():
+    return {'message': df_api.getAuthUser()}
+
 @app.get('/shutdown')
 @app.get('/shutdown/')
 async def shut_down():
