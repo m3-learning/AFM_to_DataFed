@@ -4,7 +4,6 @@
 #pragma rtGlobals=3        // Use strict wave reference mode
 #endif 
 
-
 Window DataFedSendPanel() : Panel
 	PauseUpdate; Silent 1		// building window...
 	NewPanel /K=1 /W=(1378,319,1906,1080) as "DataFed Login and Send"
@@ -37,7 +36,7 @@ Window DataFedSendPanel() : Panel
 	Button Datafed_Logout,font="Arial",fSize=16,fStyle=1,fColor=(61440,61440,61440)
 	SetVariable DataFed_coID,pos={159,80},size={160,18},proc=SetCoIDProc
 	SetVariable DataFed_coID,help={"The collection ID destination in DataFed"}
-	SetVariable DataFed_coID,font="Arial",value= _STR:"c/u_ysp28_root"
+	SetVariable DataFed_coID,font="Arial",value= _STR:"c/" + GetDataFedUser() + "_root"
 	SetVariable SaveImageSetVar_DF,pos={30,117},size={419,18},bodyWidth=387,proc=ARSavePathDFSetVarFunc,title="Path:"
 	SetVariable SaveImageSetVar_DF,help={"Folder Location of  the data that will be sent "}
 	SetVariable SaveImageSetVar_DF,font="Arial",fSize=12
@@ -84,19 +83,109 @@ Window DataFedSendPanel() : Panel
 	SetWindow kwTopWin,userdata(DrawRectInfo)= A";IsC70W.E]AS#bT0W.6RF_.@)3AEEOVdEA6EbSruBmO>XBOPq&3i&Y"
 EndMacro
 
-Function CheckandSetDataFolder()
-    // Define the desired data folder path
-    String/g desiredDF = "root:packages:MFP3D:Hardware:"
-    String/g currentDF = GetDataFolder(1)
-
-   // Get the current data folder path    
-    // Compare the current path with the desired path
-    if (cmpstr(currentDF, desiredDF) != 0)
-        // Set the data folder to the desired path
-      SetDataFolder desiredDF
-    endif
+Variable/S CheckAPIServerRunning()
+	string message = DoAPICall("")
+	return !(strsearch(message, "The server is down") >= 0)
 End
 
+Function/S LogOutOfDataFed()
+	return DoAPICall("logout")
+End
+
+Function/S GetDataFedUser()
+	return DoAPICall("get_user")
+End
+
+Function/S DoAPICall(apiExtension)
+	String apiExtension
+	Return DoAPICallWithPB(apiExtension, "")
+End
+
+Function/S DoAPICallWithPB(apiExtension, postBody)
+	String apiExtension
+	String postBody
+	String ctrlName
+	String igorFile = SpecialDirPath("Temporary", 1, 0, 0) + "response.txt"
+	String winFile = IgorToWindowsPath(igorFile)
+	String apiURL = "http://127.0.0.1:8000/" + apiExtension
+	String cmd = "curl -s " + apiURL
+	if (strlen(postBody))
+		cmd += "-X \"POST\" -H \"Content-Type: application/json\" -d '" + postBody + "'"
+	endif
+	cmd +=  " > \"" + winFile + "\""
+	RunDosCMD(cmd)
+	String content
+	Variable refNum
+	Open /R /T="TEXT" refNum as igorFile
+	FReadLine refNum, content
+	Close refNum
+	Return ExtractMessage(content)
+End
+
+Function/S ExtractMessage(message)
+	String message
+	String out
+	if (strsearch(message, "\"error\":", 0) >= 0)
+		return "API call failed: " + message
+	endif
+	Variable messageLoc = strsearch(message, "\"message\":", 0)
+	if (messageLoc >= 0)
+		out = message[+11,inf]
+		out = out[0,strsearch(out, "\"", 0)-1]
+	else
+		out = "API call failed: The server is down"
+	endif
+	return out
+End
+
+Function/S IgorToWindowsPath(igorPath)
+	String igorPath
+	String winPath
+	winPath = ReplaceString(":", igorPath, "\\\\")
+	winPath = winPath[0] + ":\\" + winPath[2,inf]
+	Return winPath
+End
+
+//===============================================================================================
+
+Function ButtonLogoutProc(DFlogout) : ButtonControl
+	STRUCT WMButtonAction &DFlogout
+	switch( DFlogout.eventCode )
+	case 2: // mouse up
+		LogOutOfDataFed()
+	break
+	case -1: // control being killed
+	break
+	endswitch
+	return 0
+End
+
+Function ButtonLoginProc(DFlogin) : ButtonControl
+	STRUCT WMButtonAction &DFlogin
+	switch( DFlogin.eventCode )
+	case 2: // mouse up
+		DoAlert 0,"Logging into DataFed via this interface is not yet implemented"
+	break
+	case -1: // control being killed
+	break
+	endswitch
+	return 0
+End
+
+/////////////////////////////////////////////////////////////////////////////////////////////////
+
+Function CheckandSetDataFolder()
+	// Define the desired data folder path
+	String/g desiredDF = "root:packages:MFP3D:Hardware:"
+	String/g currentDF = GetDataFolder(1)
+
+   // Get the current data folder path    
+	// Compare the current path with the desired path
+	if (cmpstr(currentDF, desiredDF) != 0)
+	// Set the data folder to the desired path
+	SetDataFolder desiredDF
+	endif
+End
 
 Function SetCoIDProc(datafedcoid) : SetVariableControl
 	STRUCT WMSetVariableAction &datafedcoid
@@ -115,6 +204,7 @@ Function SetCoIDProc(datafedcoid) : SetVariableControl
 
 	return 0
 End
+
 Function SetSuffixProc(suf) : SetVariableControl
 	STRUCT WMSetVariableAction &suf
 	String/g DF_basesuffix
@@ -126,12 +216,12 @@ Function SetSuffixProc(suf) : SetVariableControl
 			Variable BaseSuffixDF = suf.dval
 			String sufnum = suf.sval
 			DF_basesuffixnum =suf.dval
-    				suf.dval /= 10^(max(strlen(num2istr(suf.dval))-4,0))
-    				suf.dval = floor(Abs(suf.dval))
+					suf.dval /= 10^(max(strlen(num2istr(suf.dval))-4,0))
+					suf.dval = floor(Abs(suf.dval))
  			sprintf DF_basesuffix ,"%04d", DF_basesuffixnum
  			PV("BaseSuffix",suf.dval)
-                		ARCheckSuffix()
-    			break
+			ARCheckSuffix()
+				break
 		case -1: // control being killed
 			break
 	endswitch
@@ -139,8 +229,6 @@ Function SetSuffixProc(suf) : SetVariableControl
 	
 	return 0
 End
-
-
 	
 Function ARSavePathDFSetVarFunc(InfoStruct)
 	Struct WMSetVariableAction &InfoStruct
@@ -161,35 +249,35 @@ Function ARSavePathDFSetVarFunc(InfoStruct)
 	String ParmName = ARConvertVarName2ParmName(VarName)
 	Wave/T ParmWave = InfoStruct.svWave		//we know our svWave is a text wave.
 	String PathStr = ConvertPCPathToIgor(InfoStruct.sval)
-    	String LastPath = ParmWave[%$"Last"+ParmName][0]
-    	String PName = ParmName        //just to be clear, when it is acting as a symbolic path.
+		String LastPath = ParmWave[%$"Last"+ParmName][0]
+		String PName = ParmName        //just to be clear, when it is acting as a symbolic path.
 
 
 	Variable Error = 0
 
-    	Error = BuildFileFolder(PName,PathStr)
-    	if (Error || ARIsWriteProtected(PName))        //****** FUNCTION CALL INSIDE IF STATEMENT *******
-        		DoAlert 0,"Invalid path, or You do not have write privileges to this folder, try again"
-        		NewPath/O/Q/Z $PName,LastPath
-        		ParmWave[%$ParmName][0] = LastPath
+		Error = BuildFileFolder(PName,PathStr)
+		if (Error || ARIsWriteProtected(PName))        //****** FUNCTION CALL INSIDE IF STATEMENT *******
+			DoAlert 0,"Invalid path, or You do not have write privileges to this folder, try again"
+			NewPath/O/Q/Z $PName,LastPath
+			ParmWave[%$ParmName][0] = LastPath
 
    	else
-        		if (CmpStr(PathStr[Strlen(PathStr)-1],":") != 0)
-            		PathStr += ":"
-        		endif
+			if (CmpStr(PathStr[Strlen(PathStr)-1],":") != 0)
+			PathStr += ":"
+			endif
 
-        		ParmWave[%$"Last"+ParmName][0] = PathStr
-        		InsertNewPathInHistory(PathStr)
-        		ParmWave[%$ParmName][0] = PathStr        //make sure, if something calls the setvar func, it needs to put it in the wave.
+			ParmWave[%$"Last"+ParmName][0] = PathStr
+			InsertNewPathInHistory(PathStr)
+			ParmWave[%$ParmName][0] = PathStr        //make sure, if something calls the setvar func, it needs to put it in the wave.
 
-        		if (GV("UseImagePath"))
-        		//then we need to push the image path to the force path.
-            		ParmWave[%LastSaveForce][0] = PathStr
-            		ParmWave[%SaveForce][0] = PathStr
-            		BuildFileFolder("SaveForce",PathStr)
-        		endif
+			if (GV("UseImagePath"))
+			//then we need to push the image path to the force path.
+			ParmWave[%LastSaveForce][0] = PathStr
+			ParmWave[%SaveForce][0] = PathStr
+			BuildFileFolder("SaveForce",PathStr)
+			endif
 
-    	endif
+		endif
    	
 	
 	
@@ -198,46 +286,47 @@ Function ARSavePathDFSetVarFunc(InfoStruct)
 	UpdateHDDStrength()
 	return(0)
 End //ARSavePathSetVarFunc
+
 Function BaseNameSetDFVarFunc(bname)
 	Struct WMSetvariableAction &bname
 	string/g DF_basename
-    // EventCode
-    	switch (bname.eventCode)
+	// EventCode
+		switch (bname.eventCode)
 		case 1: // mouse up
 		case 2: // Enter key
 		case 3: // Live update
 			if (!Strlen(bname.SVal))
-               			bname.SVal = "Image"
-            		else
-                			Variable MaxLength = ARBaseNameMaxLengthFunc()
-                			if (Strlen(bname.SVal) > MaxLength)
-                    			bname.SVal = "Image"
-                			endif
-           		endif
+				bname.SVal = "Image"
+			else
+				Variable MaxLength = ARBaseNameMaxLengthFunc()
+				if (Strlen(bname.SVal) > MaxLength)
+				bname.SVal = "Image"
+				endif
+			endif
 			String AlertStr = "Your Base Name had an issue\rOnly letters, numbers, and \"_\" are allowed\rIt also has to start with a letter, cannot contain the string \"Mask\",\rcan't be the exact name of a function, and must be <= " + Num2str(MaxLength) + " characters long.\rIt has been fixed."
-            		String FixedName = FixARImageName(bname.SVal, 0, MaxLength=MaxLength)
+			String FixedName = FixARImageName(bname.SVal, 0, MaxLength=MaxLength)
 
-            		if (!StringMatch(bname.SVal, FixedName)) // check to see if the name is legal, warn if not
-                			if (GV("ScanStatus"))
-                    			print AlertStr
-                    			DoWindow/H
-                			else
-                    			DoAlert 0, AlertStr
-                			endif
-                			bname.SVal = FixedName
-            		endif
+			if (!StringMatch(bname.SVal, FixedName)) // check to see if the name is legal, warn if not
+				if (GV("ScanStatus"))
+				print AlertStr
+				DoWindow/H
+				else
+				DoAlert 0, AlertStr
+				endif
+				bname.SVal = FixedName
+			endif
 
-            // Force, BaseName = 17, suffix ("0001") = 4, DataType ("Force") = 5, Section ("_Away") = 5
-            // total = 31
+	// Force, BaseName = 17, suffix ("0001") = 4, DataType ("Force") = 5, Section ("_Away") = 5
+	// total = 31
 		SVAR BaseName = root:Packages:MFP3D:Main:Variables:BaseName
-            	BaseName = bname.SVal
+		BaseName = bname.SVal
 
-            	PV("BaseSuffix", 0) // reset the suffix to 0
-            	ARCheckSuffix()
-            	ARCheckUserNote(0)
-            	break
-        		case -1: // control being killed
-            	break
+		PV("BaseSuffix", 0) // reset the suffix to 0
+		ARCheckSuffix()
+		ARCheckUserNote(0)
+		break
+			case -1: // control being killed
+		break
 	endswitch
 	return 0
 end // BaseNameSetVarFunc
@@ -264,40 +353,16 @@ Function ButtonPathCompProc(path) : ButtonControl
 	return 0
 End
 
-Function ButtonLoginProc(DFlogin) : ButtonControl
-    STRUCT WMButtonAction &DFlogin
-
-
-    switch( DFlogin.eventCode )
-        case 2: // mouse up
-            	Datafed_Login()
-            break
-        case -1: // control being killed
-            break
-    endswitch
-    return 0
-End
-
-Function Datafed_Login()
-
-	String/g Login = ""
-	//Login += "\"C:\\Users\\Asylum User\\anaconda3\\python.exe\"" You either need this line or the word python in the next line not both
-	Login += " python " +" \"C:\\Users\\Asylum User\\Documents\\AFM_to_DataFed\\DataFedLogin.py\""+"\r"
-	Login += "pause"+"\r"
-	RunDosCMD(Login)
-End //
- 
-
 Function ButtonSendProc(DFSend) : ButtonControl
 	STRUCT WMButtonAction &DFSend
-    switch( DFSend.eventCode )
-        case 2: // mouse up
-            	Datafed_Sendfile()
-            break
-        case -1: // control being killed
-            break
-    endswitch
-    return 0
+	switch( DFSend.eventCode )
+	case 2: // mouse up
+		Datafed_Sendfile()
+	break
+	case -1: // control being killed
+	break
+	endswitch
+	return 0
 End
 
 Function Datafed_Sendfile()
@@ -311,35 +376,6 @@ Function Datafed_Sendfile()
 	Send += " pause"+"\r"
 	RunDosCMD(Send)
 End //
-
-
-
-Function ButtonLogoutProc(DFlogout) : ButtonControl
-    STRUCT WMButtonAction &DFlogout
-
-    switch( DFlogout.eventCode )
-        case 2: // mouse up
-            	Datafed_Logout()
-            break
-        case -1: // control being killed
-            break
-    endswitch
-    return 0
-End
-
-
-
-Function Datafed_Logout()
-
-	String/g  Logout = ""
-	//Logout += "\"C:\\Users\\Asylum User\\anaconda3\\python.exe\"" You either need this line or the word python in the next line not both
-	Logout += " python" +" \"C:\\Users\\Asylum User\\Documents\\AFM_to_DataFed\\DataFedLogout.py\""+"\r"
-	Logout += "pause"+"\r"
-	RunDosCMD(Logout)
-End //
-
-
-
 
 Function ARSaveDFPathButtonFunc(InfoStruct)
 	Struct WMButtonAction &InfoStruct

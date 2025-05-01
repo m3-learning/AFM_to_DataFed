@@ -50,11 +50,17 @@ End
 
 Function/S ExtractMessage(message)
 	String message
+	String out
 	if (strsearch(message, "\"error\":", 0) >= 0)
 		return "API call failed: " + message
 	endif
-	String out = message[strsearch(message, "\"message\":", 0)+11,inf]
-	out = out[0,strsearch(out, "\"", 0)-1]
+	Variable messageLoc = strsearch(message, "\"message\":", 0)
+	if (messageLoc >= 0)
+		out = message[+11,inf]
+		out = out[0,strsearch(out, "\"", 0)-1]
+	else
+		out = "API call failed: The server is down"
+	endif
 	return out
 End
 
