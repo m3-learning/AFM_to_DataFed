@@ -16,6 +16,11 @@ Function GetUserProc(ctrlName) : ButtonControl
 	String ctrlName
 	String content = GetDataFedUser()
 	TitleBox UserLabel,title=content
+    // Create a TitleBox to display the selected path
+    TitleBox DirDisplay pos={20,20}, size={450,40}, title="No directory selected"
+
+    // Create a button to open the directory dialog
+    Button PickDirBtn pos={20,80}, size={200,30}, title="Select Directory", proc=PickDirectoryProc
 End
 
 Function/S GetDataFedUser()
@@ -70,4 +75,22 @@ Function/S IgorToWindowsPath(igorPath)
 	winPath = ReplaceString(":", igorPath, "\\\\")
 	winPath = winPath[0] + ":\\" + winPath[2,inf]
 	Return winPath
+End
+
+// Button action function
+Function PickDirectoryProc(ctrlName) : ButtonControl
+    String ctrlName
+    String chosenDir
+
+    // Prompt user to choose a directory
+    NewPath/O/Q/M="Choose a directory" tempPathName
+
+    // Check if a path was set (user did not cancel)
+    if (strlen(S_path) > 0)
+        chosenDir = S_path
+        // Display in TitleBox (may truncate long paths)
+        TitleBox DirDisplay title=chosenDir
+    else
+        TitleBox DirDisplay title="No directory selected"
+    endif
 End
