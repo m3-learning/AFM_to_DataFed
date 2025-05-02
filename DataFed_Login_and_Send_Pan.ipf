@@ -6,6 +6,7 @@
 
 Window DataFedSendPanel() : Panel
 	PauseUpdate; Silent 1		// building window...
+	String/G polling
 	NewPanel /K=1 /W=(1378,319,1906,1080) as "DataFed Login and Send"
 	ModifyPanel fixedSize=1
 	SetDrawLayer UserBack
@@ -17,10 +18,10 @@ Window DataFedSendPanel() : Panel
 	Button Datafed_Logout,pos={267,21},size={138,40},proc=ButtonLogoutProc,title="Log Out"
 	Button Datafed_Logout,help={"After you are done uploading files please press this to log out of datafed "}
 	Button Datafed_Logout,font="Arial",fSize=16,fStyle=1,fColor=(61440,61440,61440)
-	Variable/G coID;
-	SetVariable DataFed_coID,pos={159,80},size={160,18},proc=SetCoIDProc,variable=coID
+	PS("coID", "c/u_" + GetDataFedUser() + "_root")
+	SetVariable DataFed_coID,pos={159,80},size={160,18},proc=SetCoIDProc
 	SetVariable DataFed_coID,help={"The collection ID destination in DataFed"}
-	SetVariable DataFed_coID,font="Arial",value= _STR:"c/u_" + GetDataFedUser() + "_root"
+	SetVariable DataFed_coID,font="Arial",value=root:packages:MFP3D:Main:Strings:GlobalStrings[%coID]
 	SetVariable PollingDirSetVar_DF,pos={30,117},size={419,18},bodyWidth=387,proc=ARSavePathDFSetVarFunc,title="Path:"
 	SetVariable PollingDirSetVar_DF,help={"Folder Location of the data that will be sent "}
 	SetVariable PollingDirSetVar_DF,font="Arial",fSize=12
@@ -153,7 +154,7 @@ Function ButtonSendProc(ctrlName) : ButtonControl
 	String ctrlName
 	String path = GS("PollingDir")
 	String winPath = IgorToWindowsPath(path)
-	DoAPICall("start_polling/" + winPath + "?collection_id=" + coID)
+	DoAPICall("start_polling/" + winPath + "?collection_id=" + GS("coID"))
 End
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
