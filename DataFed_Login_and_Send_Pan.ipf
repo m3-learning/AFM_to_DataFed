@@ -17,22 +17,24 @@ Window DataFedSendPanel() : Panel
 	Button Datafed_Logout,pos={267,21},size={138,40},proc=ButtonLogoutProc,title="Log Out"
 	Button Datafed_Logout,help={"After you are done uploading files please press this to log out of datafed "}
 	Button Datafed_Logout,font="Arial",fSize=16,fStyle=1,fColor=(61440,61440,61440)
-	SetVariable DataFed_coID,pos={159,80},size={160,18},proc=SetCoIDProc
+	Variable/G coID;
+	SetVariable DataFed_coID,pos={159,80},size={160,18},proc=SetCoIDProc,variable=coID
 	SetVariable DataFed_coID,help={"The collection ID destination in DataFed"}
 	SetVariable DataFed_coID,font="Arial",value= _STR:"c/u_" + GetDataFedUser() + "_root"
-	SetVariable SaveImageSetVar_DF,pos={30,117},size={419,18},bodyWidth=387,proc=ARSavePathDFSetVarFunc,title="Path:"
-	SetVariable SaveImageSetVar_DF,help={"Folder Location of the data that will be sent "}
-	SetVariable SaveImageSetVar_DF,font="Arial",fSize=12
-	SetVariable SaveImageSetVar_DF,value=root:packages:MFP3D:Main:Strings:GlobalStrings[%SaveImage]
-	Button DataFedSendButton_1,pos={143,293},size={216,51},proc=ButtonSendProc,title="Send To DataFed"
+	SetVariable PollingDirSetVar_DF,pos={30,117},size={419,18},bodyWidth=387,proc=ARSavePathDFSetVarFunc,title="Path:"
+	SetVariable PollingDirSetVar_DF,help={"Folder Location of the data that will be sent "}
+	SetVariable PollingDirSetVar_DF,font="Arial",fSize=12
+	SetVariable PollingDirSetVar_DF,value=root:packages:MFP3D:Main:Strings:GlobalStrings[%PollingDir]
+	TitleBox DirDisplay pos={50,350}, size={450,40},title="Not currently polling for new .ibw files"
+	Button DataFedSendButton_1,pos={143,293},size={216,51},proc=ButtonSendProc,title="Toggle Polling"
 	Button DataFedSendButton_1,help={"Runs a script to send your file once you have hit enter on the collection ID, compiled the path,and you have logged in"}
 	Button DataFedSendButton_1,fSize=13,fStyle=1,fColor=(61440,61440,61440)
-	Button SaveImageBrowseButton,pos={399,82},size={100,25},proc=PickDirectoryProc,title="Browse"
-	Button SaveImageBrowseButton,help={"Browse to set the file location"}
-	Button SaveImageBrowseButton,userdata(Pict)=  "ImageTab:Generic"
-	Button SaveImageBrowseButton,userdata(ButtonPictures)= A"A7]@]F_l.rBk)7\\8SqmKAQ3)I3_*b!ATDKpVeC!lATCU]@s\"M<D..'g<+05s7qHRLEbT#j88iZ_Ei3ksATMp(A5HuMFJPgREb0<5ARn>MG%G\\jBk)7\\VdEA6EbSruBmO>XBOPq&3i&Y"
-	Button SaveImageBrowseButton,font="Arial",fSize=12,fColor=(61440,61440,61440)
-	Button SaveImageBrowseButton,picture= Generic
+	Button PollingDirBrowseButton,pos={399,82},size={100,25},proc=PickDirectoryProc,title="Browse"
+	Button PollingDirBrowseButton,help={"Browse to set the file location"}
+	Button PollingDirBrowseButton,userdata(Pict)=  "ImageTab:Generic"
+	Button PollingDirBrowseButton,userdata(ButtonPictures)= A"A7]@]F_l.rBk)7\\8SqmKAQ3)I3_*b!ATDKpVeC!lATCU]@s\"M<D..'g<+05s7qHRLEbT#j88iZ_Ei3ksATMp(A5HuMFJPgREb0<5ARn>MG%G\\jBk)7\\VdEA6EbSruBmO>XBOPq&3i&Y"
+	Button PollingDirBrowseButton,font="Arial",fSize=12,fColor=(61440,61440,61440)
+	Button PollingDirBrowseButton,picture= Generic
 	Button OpenImageButton_4,pos={462,117},size={50,25},proc=OpenDirectoryProc,title="Open"
 	Button OpenImageButton_4,help={"Opens windows explorer at current save location"}
 	Button OpenImageButton_4,font="Arial",fSize=12,fColor=(61440,61440,61440)
@@ -120,19 +122,19 @@ Function PickDirectoryProc(ctrlName) : ButtonControl
     if (strlen(S_path) > 0)
         //chosenDir = S_path
         // Display in TitleBox (may truncate long paths)
-        PS("SaveImage", S_path)
-		//SetVariable SaveImageSetVar_DF,value=chosenDir
+        PS("PollingDir", S_path)
+		//SetVariable PollingDirSetVar_DF,value=chosenDir
         //TitleBox DirDisplay title=chosenDir
     //else
-		//SetVariable SaveImageSetVar_DF,value="No directory selected"
+		//SetVariable PollingDirSetVar_DF,value="No directory selected"
         //TitleBox DirDisplay title="No directory selected"
     endif
 End
 
 Function OpenDirectoryProc(ctrlName) : ButtonControl
 	String ctrlName
-	String path = GS("SaveImage")
-	String cmd = "Explorer.exe \"" + IgorToWindowsPath(path) + "\"\rpause\r"
+	String path = GS("PollingDir")
+	String cmd = "Explorer.exe \"" + IgorToWindowsPath(path) + "\""
 	RunDosCMD(cmd)
 	//ExecuteScriptText cmd
 End
@@ -147,7 +149,11 @@ Function ButtonLoginProc(ctrlName) : ButtonControl
 	DoAlert 0,"Logging into DataFed via this interface is not yet implemented"
 End
 
-Function ButtonSendProc(DFSend) : ButtonControl
+Function ButtonSendProc(ctrlName) : ButtonControl
+	String ctrlName
+	String path = GS("PollingDir")
+	String winPath = IgorToWindowsPath(path)
+	DoAPICall("start_polling/" + winPath + "?collection_id=" + coID)
 End
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
