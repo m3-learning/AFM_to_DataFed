@@ -33,7 +33,7 @@ Window DataFedSendPanel() : Panel
 	Button SaveImageBrowseButton,userdata(ButtonPictures)= A"A7]@]F_l.rBk)7\\8SqmKAQ3)I3_*b!ATDKpVeC!lATCU]@s\"M<D..'g<+05s7qHRLEbT#j88iZ_Ei3ksATMp(A5HuMFJPgREb0<5ARn>MG%G\\jBk)7\\VdEA6EbSruBmO>XBOPq&3i&Y"
 	Button SaveImageBrowseButton,font="Arial",fSize=12,fColor=(61440,61440,61440)
 	Button SaveImageBrowseButton,picture= Generic
-	Button OpenImageButton_4,pos={462,117},size={19,14},proc=ARSavePathButtonFunc,title=""
+	Button OpenImageButton_4,pos={462,117},size={50,25},proc=OpenDirectoryProc,title="Open"
 	Button OpenImageButton_4,help={"Opens windows explorer at current save location"}
 	Button OpenImageButton_4,font="Arial",fSize=12,fColor=(61440,61440,61440)
 	Button OpenImageButton_4,picture= OpenFolder
@@ -101,7 +101,7 @@ End
 Function/S IgorToWindowsPath(igorPath)
 	String igorPath
 	String winPath
-	winPath = ReplaceString(":", igorPath, "\\\\")
+	winPath = ReplaceString(":", igorPath, "\\")
 	winPath = winPath[0] + ":\\" + winPath[2,inf]
 	Return winPath
 End
@@ -118,40 +118,33 @@ Function PickDirectoryProc(ctrlName) : ButtonControl
 
     // Check if a path was set (user did not cancel)
     if (strlen(S_path) > 0)
-        chosenDir = S_path
+        //chosenDir = S_path
         // Display in TitleBox (may truncate long paths)
-		SetVariable SaveImageSetVar_DF,value=chosenDir
+        PS("SaveImage", S_path)
+		//SetVariable SaveImageSetVar_DF,value=chosenDir
         //TitleBox DirDisplay title=chosenDir
-    else
-		SetVariable SaveImageSetVar_DF,value="No directory selected"
+    //else
+		//SetVariable SaveImageSetVar_DF,value="No directory selected"
         //TitleBox DirDisplay title="No directory selected"
     endif
 End
 
-//===============================================================================================
-
-Function ButtonLogoutProc(DFlogout) : ButtonControl
-	STRUCT WMButtonAction &DFlogout
-	switch( DFlogout.eventCode )
-	case 2: // mouse up
-		LogOutOfDataFed()
-	break
-	case -1: // control being killed
-	break
-	endswitch
-	return 0
+Function OpenDirectoryProc(ctrlName) : ButtonControl
+	String ctrlName
+	String path = GS("SaveImage")
+	String cmd = "Explorer.exe \"" + IgorToWindowsPath(path) + "\"\rpause\r"
+	RunDosCMD(cmd)
+	//ExecuteScriptText cmd
 End
 
-Function ButtonLoginProc(DFlogin) : ButtonControl
-	STRUCT WMButtonAction &DFlogin
-	switch( DFlogin.eventCode )
-	case 2: // mouse up
-		DoAlert 0,"Logging into DataFed via this interface is not yet implemented"
-	break
-	case -1: // control being killed
-	break
-	endswitch
-	return 0
+Function ButtonLogoutProc(ctrlName) : ButtonControl
+	String ctrlName
+	LogOutOfDataFed()
+End
+
+Function ButtonLoginProc(ctrlName) : ButtonControl
+	String ctrlName
+	DoAlert 0,"Logging into DataFed via this interface is not yet implemented"
 End
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
