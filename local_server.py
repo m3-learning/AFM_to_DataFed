@@ -59,7 +59,9 @@ Server.handle_exit = handle_exit
 
 @app.get('/')
 async def root():
-    return {'message': 'Server is running'}
+    md5sum = md5(open(r'C:\Users\Asylum User\Documents\AFM_to_DataFed\test_data\HiGl_m750415.ibw', 'rb').read()).hexdigest()
+    return {'message':md5sum} 
+    #return {'message': 'Server is running'}
 
 @app.post('/login')
 @app.post('/login/')
@@ -90,7 +92,7 @@ def get_user():
 @app.post('/start_polling/{dir_path:path}')
 @app.post('/start_polling/{dir_path:path}/')
 async def start_polling(dir_path: str, collection_id: str, background_tasks: BackgroundTasks):
-    print(dir_path)
+    #print(dir_path)
     background_tasks.add_task(poll_directory, dir_path, collection_id)
     return {'message': f'Polling for new files in {dir_path}'}
 
@@ -120,7 +122,7 @@ class IBWEventHandler(FileSystemEventHandler):
         et = event.event_type
         if et == 'created':
             file_name = event.src_path
-            print(file_name)
+            #print(file_name)
             record_name = get_record_name(file_name)
             check_and_upload(f'{record_name}.ibw', self.user, self.dir_path, self.collection_id)
 
@@ -145,7 +147,11 @@ def poll_directory(dir_path: str, collection_id: str):
 
 def check_and_upload(file_name: str, user: str, dir_path: str, collection_id: str):
     full_path = os.path.join(dir_path, file_name)
+    #print(r'C:\Users\Asylum User\Documents\AFM_to_DataFed\test_data\HiGl_m750415.ibw')
+    #print(md5(open(r'C:\Users\Asylum User\Documents\AFM_to_DataFed\test_data\HiGl_m750415.ibw', 'rb').read()).hexdigest())
+    #print(full_path)
     md5sum = md5(open(full_path, 'rb').read()).hexdigest()
+    #print(md5sum)
     fup = session.query(UploadedFile).where((UploadedFile.user == user) &
                                       (UploadedFile.file_name == file_name) &
                                       (UploadedFile.collection_id ==
