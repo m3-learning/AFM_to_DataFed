@@ -147,11 +147,22 @@ def poll_directory(dir_path: str, collection_id: str):
 
 def check_and_upload(file_name: str, user: str, dir_path: str, collection_id: str):
     full_path = os.path.join(dir_path, file_name)
-    #print(r'C:\Users\Asylum User\Documents\AFM_to_DataFed\test_data\HiGl_m750415.ibw')
-    #print(md5(open(r'C:\Users\Asylum User\Documents\AFM_to_DataFed\test_data\HiGl_m750415.ibw', 'rb').read()).hexdigest())
-    #print(full_path)
-    md5sum = md5(open(full_path, 'rb').read()).hexdigest()
-    #print(md5sum)
+    # This solves a windows specific problem where when you try to read a file
+    # too quickly it just gives you a permissions error
+    count = 0
+    while True:
+        try:
+            md5sum = md5(open(full_path, 'rb').read()).hexdigest()
+            break
+        except PermissionError as e:
+            count += 1
+            if count == 10:
+                print(f'Warning: file {full_path} is either very large or an'+
+                      'actual permissions error, retrying the read a few more'+
+                      'times')
+            if count > 20:
+                raise e
+            sleep(1)
     fup = session.query(UploadedFile).where((UploadedFile.user == user) &
                                       (UploadedFile.file_name == file_name) &
                                       (UploadedFile.collection_id ==
