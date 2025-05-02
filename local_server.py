@@ -4,9 +4,18 @@ import json
 import re
 from pathlib import Path
 from math import inf
+from hashlib import md5
+from time import sleep
 
-from fastapi import FastAPI
+from sqlalchemy import create_engine
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
+from sqlalchemy.sql import select
+
+from fastapi import BackgroundTasks, FastAPI
+from uvicorn.main import Server
 from pydantic import BaseModel
+from watchdog.events import FileSystemEvent, FileSystemEventHandler
+from watchdog.observers import Observer
 
 from datafed.CommandLib import API
 
@@ -16,8 +25,37 @@ class User(BaseModel):
     username: str
     password: str
 
+class Base(DeclarativeBase):
+    pass
+
+class UploadedFile(Base):
+    __tablename__ = 'sent_files'
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user: Mapped[str]
+    file_name: Mapped[str]
+    collection_id: Mapped[str]
+    md5sum: Mapped[str]
+
+
 df_api = API()
 app = FastAPI()
+
+db_name = os.path.join(Path.home(), '.datafed', 'file_uploads.sqlite')
+engine = create_engine(f'sqlite:///{db_name}')
+conn = engine.connect()
+Session = sessionmaker(bind=engine)
+session = Session()
+UploadedFile.metadata.create_all(engine)
+
+app.should_exit = False
+original_handler = Server.handle_exit
+
+def handle_exit(*args, **kwargs):
+    app.should_exit = True
+    original_handler(*args, **kwargs)
+
+Server.handle_exit = handle_exit
 
 @app.get('/')
 async def root():
@@ -39,7 +77,7 @@ def logout():
 def send_file(file_path: str, collection_id: str,
               record_name: str | None = None):
     if not record_name:
-        record_name = re.search(r'(.*\\|.*/)?(.+)\.ibw$', file_path).groups()[1]
+        record_name = get_record_name(file_path)
     return send_ibw_to_datafed(data_record_name=record_name,
                                file_path=file_path,
                                collection_id=collection_id)
@@ -48,6 +86,18 @@ def send_file(file_path: str, collection_id: str,
 @app.get('/get_user/')
 def get_user():
     return {'message': df_api.getAuthUser()}
+
+@app.post('/start_polling/{dir_path:path}')
+@app.post('/start_polling/{dir_path:path}/')
+async def start_polling(dir_path: str, collection_id: str, background_tasks: BackgroundTasks):
+    background_tasks.add_task(poll_directory, dir_path, collection_id)
+    return {'message': f'Polling for new files in {dir_path}'}
+
+@app.get('/stop_polling')
+@app.get('/stop_polling/')
+async def start_polling():
+    poll_directory.stop = True
+    return {'message': f'Stopped polling'}
 
 @app.get('/shutdown')
 @app.get('/shutdown/')
@@ -58,6 +108,61 @@ async def shut_down():
 @app.on_event('shutdown')
 def on_shutdown():
     print('Server shutting down...')
+
+class IBWEventHandler(FileSystemEventHandler):
+    def __init__(self, user: str, dir_path: str, collection_id: str):
+        self.user = user
+        self.dir_path = dir_path
+        self.collection_id = collection_id
+
+    def on_any_event(self, event: FileSystemEvent) -> None:
+        et = event.event_type
+        if et == 'created':
+            file_name = event.src_path
+            record_name = get_record_name(file_name)
+            check_and_upload(f'{record_name}.ibw', self.user, self.dir_path, self.collection_id)
+
+def poll_directory(dir_path: str, collection_id: str):
+    poll_directory.stop = False
+    initial_files = [i for i in os.listdir(dir_path) if i.endswith('.ibw')]
+    user = get_user()['message']
+    for fname in initial_files:
+        check_and_upload(fname, user, dir_path, collection_id)
+    event_handler = IBWEventHandler(user, dir_path, collection_id)
+    observer = Observer()
+    observer.schedule(event_handler, dir_path, recursive=False)
+    observer.start()
+    print("Starting polling...")
+    try:
+        while not (poll_directory.stop or app.should_exit):
+            sleep(1)
+    finally:
+        print("Stopping polling.")
+        observer.stop()
+        observer.join()
+
+def check_and_upload(file_name: str, user: str, dir_path: str, collection_id: str):
+    full_path = os.path.join(dir_path, file_name)
+    md5sum = md5(open(full_path, 'rb').read()).hexdigest()
+    fup = session.query(UploadedFile).where((UploadedFile.user == user) &
+                                      (UploadedFile.file_name == file_name) &
+                                      (UploadedFile.collection_id ==
+                                            collection_id) &
+                                      (UploadedFile.md5sum == md5sum)).all()
+    if not fup:
+        print(f'Uploading {file_name[:-4]}')
+        send_ibw_to_datafed(data_record_name=file_name[:-4],
+                            file_path=full_path,
+                            collection_id=collection_id)
+        record = UploadedFile(user=user, file_name=file_name,
+                              collection_id=collection_id, md5sum=md5sum)
+        session.add(record)
+    else:
+        print(f'{file_name[:-4]} already uploaded, skipping')
+    session.commit()
+
+def get_record_name(file_path):
+    return re.search(r'(.*\\|.*/)?(.+)\.ibw$', file_path).groups()[1]
 
 def datafed_login(uid, password):
     """This function allows for login to datafed using the datafed API and to
