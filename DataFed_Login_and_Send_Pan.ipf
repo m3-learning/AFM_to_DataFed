@@ -4,21 +4,15 @@
 #pragma rtGlobals=3        // Use strict wave reference mode
 #endif 
 
+
+
 Window DataFedSendPanel() : Panel
 	PauseUpdate; Silent 1		// building window...
-	String homeDir
-
-	// Try to get USERPROFILE (e.g., C:\Users\YourName)
-	homeDir = GetEnvironmentVariable("USERPROFILE")
-
-	// Fallback: construct from HOMEDRIVE + HOMEPATH
-	if (strlen(homeDir) == 0)
-		String drive = GetEnvironmentVariable("HOMEDRIVE")
-		String path = GetEnvironmentVariable("HOMEPATH")
-		homeDir = drive + path
-	endif
-	String/G pollingDir = homedir
-	String/G coID = "c/u_" + GetDataFedUser() + "_root"
+	String/G pollingDir
+	String/G coID
+	Variable/G currPolling = 0
+	pollingDir = SpecialDirPath("Temporary", 1, 0, 0)
+	coID = "c/u_" + GetDataFedUser() + "_root"
 	NewPanel /K=1 /W=(1378,319,1906,1080) as "DataFed Login and Send"
 	ModifyPanel fixedSize=1
 	SetDrawLayer UserBack
@@ -37,7 +31,7 @@ Window DataFedSendPanel() : Panel
 	SetVariable PollingDirSetVar_DF,help={"Folder Location of the data that will be sent "}
 	SetVariable PollingDirSetVar_DF,font="Arial",fSize=12
 	SetVariable PollingDirSetVar_DF,variable=pollingDir
-	TitleBox DirDisplay pos={50,350}, size={450,40},title="Not currently polling for new .ibw files"
+	TitleBox DirDisplay pos={50,350}, size={1450,40},title="Not currently polling for new .ibw files"
 	Button DataFedSendButton_1,pos={143,293},size={216,51},proc=ButtonSendProc,title="Toggle Polling"
 	Button DataFedSendButton_1,help={"Runs a script to send your file once you have hit enter on the collection ID, compiled the path,and you have logged in"}
 	Button DataFedSendButton_1,fSize=13,fStyle=1,fColor=(61440,61440,61440)
@@ -75,18 +69,39 @@ Function/S DoAPICall(apiExtension)
 	Return DoAPICallWithPB(apiExtension, "")
 End
 
+Function/S TogglePolling()
+	Variable/G currPolling
+	if (!currPolling)
+		currPolling = 1
+		String ctrlName
+		String/G pollingDir
+		String/G coID
+		String path = pollingDir
+		TitleBox DirDisplay,title="Polling for new .ibw files in " + path
+		String winPath = IgorToWindowsPath(path)
+		String call = "start_polling/" + winPath + "?collection_id=" + coID
+		return DoAPICallWithPB(call, "{}")
+	else
+		currPolling = 0
+		TitleBox DirDisplay,title="Not currently polling for new .ibw files"
+		return DoAPICall("stop_polling")
+	endif
+End
+
 Function/S DoAPICallWithPB(apiExtension, postBody)
 	String apiExtension
 	String postBody
 	String ctrlName
 	String igorFile = SpecialDirPath("Temporary", 1, 0, 0) + "response.txt"
 	String winFile = IgorToWindowsPath(igorFile)
-	String apiURL = "http://127.0.0.1:8000/" + apiExtension
+	String apiURL = "\"http://127.0.0.1:8000/" + apiExtension + "\""
+	// I have no idea why but %20 didn't work, this did
+	apiURL = ReplaceString(" ", apiURL, "%%%220")
 	String cmd = "curl -s " + apiURL
 	if (strlen(postBody))
-		cmd += "-X \"POST\" -H \"Content-Type: application/json\" -d '" + postBody + "'"
+		cmd += " -X \"POST\" -H \"Content-Type: application/json\" -d '" + postBody + "'"
 	endif
-	cmd +=  " > \"" + winFile + "\""
+	cmd += " > \"" + winFile + "\""
 	RunDosCMD(cmd)
 	String content
 	Variable refNum
@@ -123,6 +138,7 @@ End
 // Button action function
 Function PickDirectoryProc(ctrlName) : ButtonControl
     String ctrlName
+    String/G pollingDir
     String chosenDir
     String pathName = "userDirPath"
 
@@ -134,7 +150,7 @@ Function PickDirectoryProc(ctrlName) : ButtonControl
     if (strlen(S_path) > 0)
         //chosenDir = S_path
         // Display in TitleBox (may truncate long paths)
-        pollingDir = S_path)
+        pollingDir = S_path
 		//SetVariable PollingDirSetVar_DF,value=chosenDir
         //TitleBox DirDisplay title=chosenDir
     //else
@@ -145,6 +161,7 @@ End
 
 Function OpenDirectoryProc(ctrlName) : ButtonControl
 	String ctrlName
+	String/G pollingDir
 	String path = pollingDir
 	String cmd = "Explorer.exe \"" + IgorToWindowsPath(path) + "\""
 	RunDosCMD(cmd)
@@ -161,12 +178,12 @@ Function ButtonLoginProc(ctrlName) : ButtonControl
 	DoAlert 0,"Logging into DataFed via this interface is not yet implemented"
 End
 
+
 Function ButtonSendProc(ctrlName) : ButtonControl
-	String ctrlName
-	String path = pollingDir
-	String winPath = IgorToWindowsPath(path)
-	DoAPICall("start_polling/" + winPath + "?collection_id=" + GS("coID"))
+	 String ctrlName
+	 TogglePolling()
 End
+
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 

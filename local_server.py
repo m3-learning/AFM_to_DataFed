@@ -90,6 +90,7 @@ def get_user():
 @app.post('/start_polling/{dir_path:path}')
 @app.post('/start_polling/{dir_path:path}/')
 async def start_polling(dir_path: str, collection_id: str, background_tasks: BackgroundTasks):
+    print(dir_path)
     background_tasks.add_task(poll_directory, dir_path, collection_id)
     return {'message': f'Polling for new files in {dir_path}'}
 
@@ -119,6 +120,7 @@ class IBWEventHandler(FileSystemEventHandler):
         et = event.event_type
         if et == 'created':
             file_name = event.src_path
+            print(file_name)
             record_name = get_record_name(file_name)
             check_and_upload(f'{record_name}.ibw', self.user, self.dir_path, self.collection_id)
 
