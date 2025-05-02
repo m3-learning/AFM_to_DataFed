@@ -6,7 +6,19 @@
 
 Window DataFedSendPanel() : Panel
 	PauseUpdate; Silent 1		// building window...
-	String/G polling
+	String homeDir
+
+	// Try to get USERPROFILE (e.g., C:\Users\YourName)
+	homeDir = GetEnvironmentVariable("USERPROFILE")
+
+	// Fallback: construct from HOMEDRIVE + HOMEPATH
+	if (strlen(homeDir) == 0)
+		String drive = GetEnvironmentVariable("HOMEDRIVE")
+		String path = GetEnvironmentVariable("HOMEPATH")
+		homeDir = drive + path
+	endif
+	String/G pollingDir = homedir
+	String/G coID = "c/u_" + GetDataFedUser() + "_root"
 	NewPanel /K=1 /W=(1378,319,1906,1080) as "DataFed Login and Send"
 	ModifyPanel fixedSize=1
 	SetDrawLayer UserBack
@@ -18,14 +30,13 @@ Window DataFedSendPanel() : Panel
 	Button Datafed_Logout,pos={267,21},size={138,40},proc=ButtonLogoutProc,title="Log Out"
 	Button Datafed_Logout,help={"After you are done uploading files please press this to log out of datafed "}
 	Button Datafed_Logout,font="Arial",fSize=16,fStyle=1,fColor=(61440,61440,61440)
-	PS("coID", "c/u_" + GetDataFedUser() + "_root")
-	SetVariable DataFed_coID,pos={159,80},size={160,18},proc=SetCoIDProc
+	SetVariable DataFed_coID,pos={159,80},size={160,18},proc=SetCoIDProc,variable=coID
 	SetVariable DataFed_coID,help={"The collection ID destination in DataFed"}
-	SetVariable DataFed_coID,font="Arial",value=root:packages:MFP3D:Main:Strings:GlobalStrings[%coID]
+	SetVariable DataFed_coID,font="Arial"
 	SetVariable PollingDirSetVar_DF,pos={30,117},size={419,18},bodyWidth=387,proc=ARSavePathDFSetVarFunc,title="Path:"
 	SetVariable PollingDirSetVar_DF,help={"Folder Location of the data that will be sent "}
 	SetVariable PollingDirSetVar_DF,font="Arial",fSize=12
-	SetVariable PollingDirSetVar_DF,value=root:packages:MFP3D:Main:Strings:GlobalStrings[%PollingDir]
+	SetVariable PollingDirSetVar_DF,variable=pollingDir
 	TitleBox DirDisplay pos={50,350}, size={450,40},title="Not currently polling for new .ibw files"
 	Button DataFedSendButton_1,pos={143,293},size={216,51},proc=ButtonSendProc,title="Toggle Polling"
 	Button DataFedSendButton_1,help={"Runs a script to send your file once you have hit enter on the collection ID, compiled the path,and you have logged in"}
@@ -123,7 +134,7 @@ Function PickDirectoryProc(ctrlName) : ButtonControl
     if (strlen(S_path) > 0)
         //chosenDir = S_path
         // Display in TitleBox (may truncate long paths)
-        PS("PollingDir", S_path)
+        pollingDir = S_path)
 		//SetVariable PollingDirSetVar_DF,value=chosenDir
         //TitleBox DirDisplay title=chosenDir
     //else
@@ -134,7 +145,7 @@ End
 
 Function OpenDirectoryProc(ctrlName) : ButtonControl
 	String ctrlName
-	String path = GS("PollingDir")
+	String path = pollingDir
 	String cmd = "Explorer.exe \"" + IgorToWindowsPath(path) + "\""
 	RunDosCMD(cmd)
 	//ExecuteScriptText cmd
@@ -152,7 +163,7 @@ End
 
 Function ButtonSendProc(ctrlName) : ButtonControl
 	String ctrlName
-	String path = GS("PollingDir")
+	String path = pollingDir
 	String winPath = IgorToWindowsPath(path)
 	DoAPICall("start_polling/" + winPath + "?collection_id=" + GS("coID"))
 End
