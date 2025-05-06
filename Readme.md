@@ -28,7 +28,7 @@
    - `logout`: Logs the user out of DataFed.
    - `send_file`: Uploads an `.ibw` file to DataFed.
 
-     Example: `http://127.0.0.1:8000/send_file//home/user/somewhere/AFM_to_DataFed/test_data/HiGl_m750506.ibw?collection_id=1?record_name=HiGl1`
+     Example: `http://127.0.0.1:8000/send_file//home/user/somewhere/AFM_to_DataFed/test_data/HiGl_m750506.ibw?collection_id=1&record_name=HiGl1`
 
      Parameters:
 
