@@ -63,12 +63,11 @@ Server.handle_exit = handle_exit
 
 @app.get("/")
 async def root():
-    md5sum = md5(
-        open(
-            r"C:\Users\Asylum User\Documents\AFM_to_DataFed\test_data\HiGl_m750415.ibw",
-            "rb",
-        ).read()
-    ).hexdigest()
+    file_path = (
+        r"C:\Users\Asylum User\Documents\AFM_to_DataFed\test_data\HiGl_m750415.ibw"
+    )
+    with open(file_path, "rb") as f:
+        md5sum = md5(f.read()).hexdigest()
     return {"message": md5sum}
     # return {'message': 'Server is running'}
 
@@ -177,7 +176,8 @@ def check_and_upload(file_name: str, user: str, dir_path: str, collection_id: st
     count = 0
     while True:
         try:
-            md5sum = md5(open(full_path, "rb").read()).hexdigest()
+            with open(full_path, "rb") as f:
+                md5sum = md5(f.read()).hexdigest()
             break
         except PermissionError as e:
             count += 1
