@@ -314,11 +314,11 @@ def send_ibw_to_datafed(data_record_name, file_path, collection_id):
             if curr_key in keys:
                 del json_output[curr_key]
 
-    for _, (key, value) in enumerate(json_output.items()):
+    for key, value in json_output.items():
         if value == -inf:
             json_output[key] = "-Inf"
 
-    for _, (key, value) in enumerate(json_output.items()):
+    for key, value in json_output.items():
         if value == inf:
             json_output[key] = "Inf"
 
