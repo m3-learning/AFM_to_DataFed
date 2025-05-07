@@ -1,6 +1,9 @@
 # To ensure app dependencies are ported from your virtual environment/host machine into your container, run 'pip freeze > requirements.txt' in the terminal to overwrite this file
-igor
 datafed
+fastapi[standard]
+igor
+numpy
 protobuf
 sci-memex
-fastapi[standard]
+sqlalchemy
+watchdog

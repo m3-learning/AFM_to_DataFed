@@ -9,7 +9,7 @@ def _read_parms(ibw_wave, codec="utf-8"):
     if isinstance(parm_string, bytes):
         try:
             parm_string = parm_string.decode(codec)
-        except:
+        except Exception:
             parm_string = parm_string.decode("ISO-8859-1")  # for older AR software
     parm_string = parm_string.rstrip("\r")
     parm_string = parm_string.replace(".", "_")
@@ -77,18 +77,19 @@ def _parse_file_path(self, input_path):
 def _read_data(self):
     pass
 
+
 class MyEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, np.integer):
-            return int(obj)
-        elif isinstance(obj, np.floating):
-            return float(obj)
-        elif isinstance(obj, np.ndarray):
-            return obj.tolist()
-        elif isinstance(obj, bytes):
-            return str(obj)
+    def default(self, o):
+        if isinstance(o, np.integer):
+            return int(o)
+        elif isinstance(o, np.floating):
+            return float(o)
+        elif isinstance(o, np.ndarray):
+            return o.tolist()
+        elif isinstance(o, bytes):
+            return str(o)
         else:
-            return super(MyEncoder, self).default(obj)
+            return super(MyEncoder, self).default(o)
 
 
 def get_metadata(file_name):

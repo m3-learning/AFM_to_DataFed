@@ -1,35 +1,36 @@
-import os
-import signal
 import json
+import os
 import re
-from pathlib import Path
-from math import inf
+import signal
 from hashlib import md5
+from math import inf
+from pathlib import Path
 from time import sleep
+from typing import Optional
 
+from datafed.CommandLib import API
+from fastapi import BackgroundTasks, FastAPI
+from pydantic import BaseModel
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
-from sqlalchemy.sql import select
-
-from fastapi import BackgroundTasks, FastAPI
-from uvicorn.main import Server
-from pydantic import BaseModel
+from uvicorn.server import Server
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from watchdog.observers import Observer
 
-from datafed.CommandLib import API
-
 from util import get_metadata
+
 
 class User(BaseModel):
     username: str
     password: str
 
+
 class Base(DeclarativeBase):
     pass
 
+
 class UploadedFile(Base):
-    __tablename__ = 'sent_files'
+    __tablename__ = "sent_files"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user: Mapped[str]
@@ -41,8 +42,8 @@ class UploadedFile(Base):
 df_api = API()
 app = FastAPI()
 
-db_name = os.path.join(Path.home(), '.datafed', 'file_uploads.sqlite')
-engine = create_engine(f'sqlite:///{db_name}')
+db_name = os.path.join(Path.home(), ".datafed", "file_uploads.sqlite")
+engine = create_engine(f"sqlite:///{db_name}")
 conn = engine.connect()
 Session = sessionmaker(bind=engine)
 session = Session()
@@ -51,66 +52,83 @@ UploadedFile.metadata.create_all(engine)
 app.should_exit = False
 original_handler = Server.handle_exit
 
+
 def handle_exit(*args, **kwargs):
     app.should_exit = True
     original_handler(*args, **kwargs)
 
+
 Server.handle_exit = handle_exit
 
-@app.get('/')
-async def root():
-    md5sum = md5(open(r'C:\Users\Asylum User\Documents\AFM_to_DataFed\test_data\HiGl_m750415.ibw', 'rb').read()).hexdigest()
-    return {'message':md5sum} 
-    #return {'message': 'Server is running'}
 
-@app.post('/login')
-@app.post('/login/')
+@app.get("/")
+async def root():
+    file_path = (
+        r"C:\Users\Asylum User\Documents\AFM_to_DataFed\test_data\HiGl_m750415.ibw"
+    )
+    with open(file_path, "rb") as f:
+        md5sum = md5(f.read()).hexdigest()
+    return {"message": md5sum}
+    # return {'message': 'Server is running'}
+
+
+@app.post("/login")
+@app.post("/login/")
 async def login(user: User):
     return datafed_login(user.username, user.password)
 
-@app.post('/logout')
-@app.post('/logout/')
-def logout():
-    directory_path = os.path.join(Path.home(), '.datafed')
-    return {'message': delete_datafed_key_files(directory_path)}
 
-@app.post('/send_file/{file_path:path}')
-@app.post('/send_file/{file_path:path}/')
-def send_file(file_path: str, collection_id: str,
-              record_name: str | None = None):
+@app.post("/logout")
+@app.post("/logout/")
+def logout():
+    directory_path = os.path.join(Path.home(), ".datafed")
+    return {"message": delete_datafed_key_files(directory_path)}
+
+
+@app.post("/send_file/{file_path:path}")
+@app.post("/send_file/{file_path:path}/")
+def send_file(file_path: str, collection_id: str, record_name: Optional[str] = None):
     if not record_name:
         record_name = get_record_name(file_path)
-    return send_ibw_to_datafed(data_record_name=record_name,
-                               file_path=file_path,
-                               collection_id=collection_id)
+    return send_ibw_to_datafed(
+        data_record_name=record_name, file_path=file_path, collection_id=collection_id
+    )
 
-@app.get('/get_user')
-@app.get('/get_user/')
-def get_user():
-    return {'message': df_api.getAuthUser()}
 
-@app.post('/start_polling/{dir_path:path}')
-@app.post('/start_polling/{dir_path:path}/')
-async def start_polling(dir_path: str, collection_id: str, background_tasks: BackgroundTasks):
-    #print(dir_path)
+@app.get("/get_user")
+@app.get("/get_user/")
+def get_user() -> dict[str, Optional[str]]:
+    return {"message": df_api.getAuthUser()}
+
+
+@app.post("/start_polling/{dir_path:path}")
+@app.post("/start_polling/{dir_path:path}/")
+async def start_polling(
+    dir_path: str, collection_id: str, background_tasks: BackgroundTasks
+):
+    # print(dir_path)
     background_tasks.add_task(poll_directory, dir_path, collection_id)
-    return {'message': f'Polling for new files in {dir_path}'}
+    return {"message": f"Polling for new files in {dir_path}"}
 
-@app.get('/stop_polling')
-@app.get('/stop_polling/')
-async def start_polling():
+
+@app.get("/stop_polling")
+@app.get("/stop_polling/")
+async def stop_polling():
     poll_directory.stop = True
-    return {'message': f'Stopped polling'}
+    return {"message": "Stopped polling"}
 
-@app.get('/shutdown')
-@app.get('/shutdown/')
+
+@app.get("/shutdown")
+@app.get("/shutdown/")
 async def shut_down():
     os.kill(os.getpid(), signal.SIGTERM)
-    return {'message': 'Server shutting down'}
+    return {"message": "Server shutting down"}
 
-@app.on_event('shutdown')
+
+@app.on_event("shutdown")
 def on_shutdown():
-    print('Server shutting down...')
+    print("Server shutting down...")
+
 
 class IBWEventHandler(FileSystemEventHandler):
     def __init__(self, user: str, dir_path: str, collection_id: str):
@@ -120,16 +138,21 @@ class IBWEventHandler(FileSystemEventHandler):
 
     def on_any_event(self, event: FileSystemEvent) -> None:
         et = event.event_type
-        if et == 'created':
+        if et == "created":
             file_name = event.src_path
-            #print(file_name)
+            # print(file_name)
             record_name = get_record_name(file_name)
-            check_and_upload(f'{record_name}.ibw', self.user, self.dir_path, self.collection_id)
+            check_and_upload(
+                f"{record_name}.ibw", self.user, self.dir_path, self.collection_id
+            )
+
 
 def poll_directory(dir_path: str, collection_id: str):
     poll_directory.stop = False
-    initial_files = [i for i in os.listdir(dir_path) if i.endswith('.ibw')]
-    user = get_user()['message']
+    initial_files = [i for i in os.listdir(dir_path) if i.endswith(".ibw")]
+    user = get_user()["message"]
+    if not user:
+        raise ValueError("User not found")
     for fname in initial_files:
         check_and_upload(fname, user, dir_path, collection_id)
     event_handler = IBWEventHandler(user, dir_path, collection_id)
@@ -145,6 +168,7 @@ def poll_directory(dir_path: str, collection_id: str):
         observer.stop()
         observer.join()
 
+
 def check_and_upload(file_name: str, user: str, dir_path: str, collection_id: str):
     full_path = os.path.join(dir_path, file_name)
     # This solves a windows specific problem where when you try to read a file
@@ -152,36 +176,52 @@ def check_and_upload(file_name: str, user: str, dir_path: str, collection_id: st
     count = 0
     while True:
         try:
-            md5sum = md5(open(full_path, 'rb').read()).hexdigest()
+            with open(full_path, "rb") as f:
+                md5sum = md5(f.read()).hexdigest()
             break
         except PermissionError as e:
             count += 1
             if count == 10:
-                print(f'Warning: file {full_path} is either very large or an'+
-                      'actual permissions error, retrying the read a few more'+
-                      'times')
+                print(
+                    f"Warning: file {full_path} is either very large or an"
+                    + "actual permissions error, retrying the read a few more"
+                    + "times"
+                )
             if count > 20:
                 raise e
             sleep(1)
-    fup = session.query(UploadedFile).where((UploadedFile.user == user) &
-                                      (UploadedFile.file_name == file_name) &
-                                      (UploadedFile.collection_id ==
-                                            collection_id) &
-                                      (UploadedFile.md5sum == md5sum)).all()
+    fup = (
+        session.query(UploadedFile)
+        .where(
+            (UploadedFile.user == user)
+            & (UploadedFile.file_name == file_name)
+            & (UploadedFile.collection_id == collection_id)
+            & (UploadedFile.md5sum == md5sum)
+        )
+        .all()
+    )
     if not fup:
-        print(f'Uploading {file_name[:-4]}')
-        send_ibw_to_datafed(data_record_name=file_name[:-4],
-                            file_path=full_path,
-                            collection_id=collection_id)
-        record = UploadedFile(user=user, file_name=file_name,
-                              collection_id=collection_id, md5sum=md5sum)
+        print(f"Uploading {file_name[:-4]}")
+        send_ibw_to_datafed(
+            data_record_name=file_name[:-4],
+            file_path=full_path,
+            collection_id=collection_id,
+        )
+        record = UploadedFile(
+            user=user, file_name=file_name, collection_id=collection_id, md5sum=md5sum
+        )
         session.add(record)
     else:
-        print(f'{file_name[:-4]} already uploaded, skipping')
+        print(f"{file_name[:-4]} already uploaded, skipping")
     session.commit()
 
+
 def get_record_name(file_path):
-    return re.search(r'(.*\\|.*/)?(.+)\.ibw$', file_path).groups()[1]
+    match = re.search(r"(.*\\|.*/)?(.+)\.ibw$", file_path)
+    if not match:
+        raise ValueError("Invalid file path")
+    return match.groups()[1]
+
 
 def datafed_login(uid, password):
     """This function allows for login to datafed using the datafed API and to
@@ -191,23 +231,26 @@ def datafed_login(uid, password):
     then your password securely and then it
 
     Returns: _type_: a print statement letting you know whether or not your
-    login was successful """
+    login was successful"""
 
     output = {}
     try:
         # Attempt to log in using provided credentials
         df_api.loginByPassword(uid, password)
-        output['message'] = f'Successfully logged in to Data as {df_api.getAuthUser()}'
+        output["message"] = f"Successfully logged in to Data as {df_api.getAuthUser()}"
         if df_api.getAuthUser():
             df_api.setupCredentials()
     except Exception as e:
-        output['message'] = 'Could not log into DataFed. Check your internet connection,' +\
-        f' username, and password.'
-        output['error'] = str(e)
+        output["message"] = (
+            "Could not log into DataFed. Check your internet connection,"
+            + " username, and password."
+        )
+        output["error"] = str(e)
     return output
 
+
 def delete_datafed_key_files(directory):
-    """ Delete DataFed user key files from the specified directory.
+    """Delete DataFed user key files from the specified directory.
 
     This function attempts to remove the DataFed user private key file and the
     associated public key file from the provided directory. If the files exist,
@@ -219,9 +262,9 @@ def delete_datafed_key_files(directory):
 
     """
 
-    priv_key = 'datafed-user-key.priv'
+    priv_key = "datafed-user-key.priv"
     priv_key_file = os.path.join(directory, priv_key)
-    pub_key = 'datafed-user-key.pub'
+    pub_key = "datafed-user-key.pub"
     pub_key_file = os.path.join(directory, pub_key)
     deleted = []
 
@@ -233,13 +276,14 @@ def delete_datafed_key_files(directory):
         os.remove(pub_key_file)
         deleted.append(pub_key)
 
-    l = len(deleted)
-    if not l:
-        return 'User was already logged out'
-    out = f'Deleted {deleted[0]}'
-    if l > 1:
-        out += f' and {deleted[1]}'
+    deleted_count = len(deleted)
+    if not deleted_count:
+        return "User was already logged out"
+    out = f"Deleted {deleted[0]}"
+    if deleted_count > 1:
+        out += f" and {deleted[1]}"
     return out
+
 
 def send_ibw_to_datafed(data_record_name, file_path, collection_id):
     """This function takes an .ibw file and a datafed collection id, and using
@@ -263,46 +307,49 @@ def send_ibw_to_datafed(data_record_name, file_path, collection_id):
 
     # This removes flattening information and fixes inf values in metadata
     keys = json_output.keys()
-    prefixes = [f'Flatten {i}' for i in ['Offsets', 'Slopes']]
+    prefixes = [f"Flatten {i}" for i in ["Offsets", "Slopes"]]
     for prefix in prefixes:
         for i in [0, 1, 4]:
-            curr_key = f'{prefix} {i}'
+            curr_key = f"{prefix} {i}"
             if curr_key in keys:
                 del json_output[curr_key]
 
-    for _, (key, value) in enumerate(json_output.items()):
+    for key, value in json_output.items():
         if value == -inf:
-            json_output[key] = '-Inf'
+            json_output[key] = "-Inf"
 
-    for _, (key, value) in enumerate(json_output.items()):
+    for key, value in json_output.items():
         if value == inf:
-            json_output[key] = 'Inf'
+            json_output[key] = "Inf"
 
-    output = {'message': 'Uploaded record to datafed'}
+    output = {"message": "Uploaded record to datafed"}
     try:
         # creates a new data record
-        dc_resp = df_api.dataCreate(data_record_name, description=file_path,
-                                    metadata=json.dumps(json_output),
-                                    parent_id=collection_id)
+        dc_resp = df_api.dataCreate(
+            data_record_name,
+            description=file_path,
+            metadata=json.dumps(json_output),
+            parent_id=collection_id,
+        )
     except Exception as e:
-        output['message'] = 'There was an error creating the DataRecord'
-        output['error'] = str(e)
+        output["message"] = "There was an error creating the DataRecord"
+        output["error"] = str(e)
         return output
 
     try:
         # extracts the record ID
         rec_id = dc_resp[0].data[0].id
     except ValueError as e:
-        output['message'] = 'Could not find record ID'
-        output['error'] = str(e)
+        output["message"] = "Could not find record ID"
+        output["error"] = str(e)
         return output
 
     try:
         # sends the put command
         df_api.dataPut(rec_id, file_path, wait=False)
     except Exception as e:
-        output['message'] = 'Could not intiate globus transfer'
-        output['error'] = str(e)
+        output["message"] = "Could not intiate globus transfer"
+        output["error"] = str(e)
         return output
 
     return output
