@@ -2,6 +2,7 @@ import json
 import os
 import re
 import signal
+import tkinter as tk
 from hashlib import md5
 from math import inf
 from pathlib import Path
@@ -52,24 +53,76 @@ UploadedFile.metadata.create_all(engine)
 app.should_exit = False
 original_handler = Server.handle_exit
 
+class LoginPrompt():
+    
+    def __init__(self):
+        self.root = tk.Tk()
+        self.root.title("User Credentials")
+
+        tk.Label(self.root, text="Globus Username:").grid(row=0, column=0, padx=5, pady=5, sticky="e")
+        self.entry_username1 = tk.Entry(self.root)
+        self.entry_username1.grid(row=0, column=1, padx=5, pady=5)
+
+        tk.Label(self.root, text="Globus Password:").grid(row=1, column=0, padx=5, pady=5, sticky="e")
+        self.entry_password1 = tk.Entry(self.root, show="*")  # Mask the password input
+        self.entry_password1.grid(row=1, column=1, padx=5, pady=5)
+
+        self.result_label = tk.Label(self.root, text="——————————————————————\nLeave blank if same as Globus")
+        self.result_label.grid(row=2, column=0, columnspan=2, pady=5)
+
+        tk.Label(self.root, text="DataFed Username:").grid(row=3, column=0, padx=5, pady=5, sticky="e")
+        self.entry_username2 = tk.Entry(self.root)
+        self.entry_username2.grid(row=3, column=1, padx=5, pady=5)
+
+        tk.Label(self.root, text="DataFed Password:").grid(row=4, column=0, padx=5, pady=5, sticky="e")
+        self.entry_password2 = tk.Entry(self.root, show="*")  # Mask the password input
+        self.entry_password2.grid(row=4, column=1, padx=5, pady=5)
+
+        self.submit_button = tk.Button(self.root, text="Submit", command=self.submit)
+        self.submit_button.grid(row=5, column=0, columnspan=2, pady=10)
+        self.root.bind('<Return>', self.submit)
+
+        self.result_label = tk.Label(self.root, text="", fg="blue")
+        self.result_label.grid(row=6, column=0, columnspan=2, pady=5)
+        self.g_username = ""
+        self.g_password = ""
+        self.df_username = ""
+        self.df_password = ""
+
+    def start(self):
+        self.root.mainloop()
+
+    def submit(self, *_):
+        # Retrieve user inputs
+        self.g_username = self.entry_username1.get()
+        self.g_password = self.entry_password1.get()
+        self.df_username = self.entry_username2.get()
+        self.df_password = self.entry_password2.get()
+        self.root.destroy()
+
+        #self.result_label.config(text=f"User 1: {self.username1}, " +
+                                 #f"{self.password1}\nUser 2: {self.username2}, " +
+                                 #f"{self.password2}")
 
 def handle_exit(*args, **kwargs):
     app.should_exit = True
     original_handler(*args, **kwargs)
 
-
 Server.handle_exit = handle_exit
-
 
 @app.get("/")
 async def root():
-    file_path = (
-        r"C:\Users\Asylum User\Documents\AFM_to_DataFed\test_data\HiGl_m750415.ibw"
-    )
-    with open(file_path, "rb") as f:
-        md5sum = md5(f.read()).hexdigest()
-    return {"message": md5sum}
-    # return {'message': 'Server is running'}
+    #file_path = (
+    #    r"C:\Users\Asylum User\Documents\AFM_to_DataFed\test_data\HiGl_m750415.ibw"
+    #)
+    #with open(file_path, "rb") as f:
+    #    md5sum = md5(f.read()).hexdigest()
+    #return {"message": md5sum}
+    lp = LoginPrompt()
+    lp.start()
+    return {'message': lp.g_username}
+    #return {'message': 'Server is running'}
+    
 
 
 @app.post("/login")
