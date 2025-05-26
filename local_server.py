@@ -62,7 +62,7 @@ class LoginPrompt():
         self.root = tk.Tk()
         self.root.title("User Credentials")
 
-        tk.Label(self.root, text="Globus Username:").grid(row=0, column=0, padx=5, pady=5, sticky="e")
+        tk.Label(self.root, text="Globus Auth Code:").grid(row=0, column=0, padx=5, pady=5, sticky="e")
         self.entry_username1 = tk.Entry(self.root)
         self.entry_username1.grid(row=0, column=1, padx=5, pady=5)
 
