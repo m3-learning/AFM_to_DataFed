@@ -70,7 +70,7 @@ class LoginPrompt():
         #self.entry_password1 = tk.Entry(self.root, show="*")  # Mask the password input
         #self.entry_password1.grid(row=1, column=1, padx=5, pady=5)
 
-        self.result_label = tk.Label(self.root, text="——————————————————————\nLeave blank if same as Globus")
+        self.result_label = tk.Label(self.root, text="——————————————————————")
         self.result_label.grid(row=1, column=0, columnspan=2, pady=5)
 
         tk.Label(self.root, text="DataFed Username:").grid(row=2, column=0, padx=5, pady=5, sticky="e")
@@ -87,18 +87,18 @@ class LoginPrompt():
 
         self.result_label = tk.Label(self.root, text="", fg="blue")
         self.result_label.grid(row=5, column=0, columnspan=2, pady=5)
-        self.g_username = ""
-        self.g_password = ""
+        self.g_code = ""
         self.df_username = ""
         self.df_password = ""
 
     def start(self):
-        envs={i[0]: i[1] for i in [i.split('=') for i in shlex.split(r'GCP_CONFIG_DIR="C:\Users\Joel\AppData\Local\Globus Connect" GCP_SSH_PATH="C:\Program Files (x86)\Globus Connect Personal\bin\ext\ssh.exe" GCP_PDEATH_PATH="C:\Program Files (x86)\Globus Connect Personal\bin\ext\pdeath.exe" GCP_RELAYTOOL_PATH="C:\Program Files (x86)\Globus Connect Personal\bin\ext\relaytool.exe" GCP_GRIDFTP_PATH="C:\Program Files (x86)\Globus Connect Personal\bin\globus-gridftp-server.exe" PYTHONPATH=""')]}
+        envs={i[0]: i[1] for i in [i.split('=') for i in shlex.split(r'GCP_CONFIG_DIR="C:\Users\Asylum User\AppData\Local\Globus Connect" GCP_SSH_PATH="C:\Program Files (x86)\Globus Connect Personal\bin\ext\ssh.exe" GCP_PDEATH_PATH="C:\Program Files (x86)\Globus Connect Personal\bin\ext\pdeath.exe" GCP_RELAYTOOL_PATH="C:\Program Files (x86)\Globus Connect Personal\bin\ext\relaytool.exe" GCP_GRIDFTP_PATH="C:\Program Files (x86)\Globus Connect Personal\bin\globus-gridftp-server.exe" PYTHONPATH=""')]}
         envs = envs | os.environ.copy()
         self.process = subprocess.Popen(['C:\\Program Files (x86)\\Globus Connect Personal\\bin\\ext\\register\\register.exe', '--name', 'afm'], env=envs, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
         for _ in range(7):
             self.process.stdout.readline()
         url = self.process.stdout.readline()
+        #print(url)
         webbrowser.open(url)
         self.root.mainloop()
 
@@ -132,21 +132,19 @@ async def root():
     #with open(file_path, "rb") as f:
     #    md5sum = md5(f.read()).hexdigest()
     #return {"message": md5sum}
+    return {'message': 'Server is running'}
+
+
+@app.get("/login")
+@app.get("/login/")
+async def login():
     lp = LoginPrompt()
     lp.start()
-    return {'message': lp.g_username}
-    #return {'message': 'Server is running'}
-    
+    return {'message': f"Logged in with globus code {lp.g_code} and DataFed username {lp.df_username}"}
 
 
-@app.post("/login")
-@app.post("/login/")
-async def login(user: User):
-    return datafed_login(user.username, user.password)
-
-
-@app.post("/logout")
-@app.post("/logout/")
+@app.get("/logout")
+@app.get("/logout/")
 def logout():
     directory_path = os.path.join(Path.home(), ".datafed")
     return {"message": delete_datafed_key_files(directory_path)}
