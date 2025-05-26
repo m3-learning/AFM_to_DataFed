@@ -2,12 +2,16 @@ import json
 import os
 import re
 import signal
+import subprocess
+import shlex
 import tkinter as tk
 from hashlib import md5
 from math import inf
 from pathlib import Path
 from time import sleep
 from typing import Optional
+import webbrowser
+from time import sleep
 
 from datafed.CommandLib import API
 from fastapi import BackgroundTasks, FastAPI
@@ -19,7 +23,6 @@ from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from watchdog.observers import Observer
 
 from util import get_metadata
-
 
 class User(BaseModel):
     username: str
@@ -63,41 +66,51 @@ class LoginPrompt():
         self.entry_username1 = tk.Entry(self.root)
         self.entry_username1.grid(row=0, column=1, padx=5, pady=5)
 
-        tk.Label(self.root, text="Globus Password:").grid(row=1, column=0, padx=5, pady=5, sticky="e")
-        self.entry_password1 = tk.Entry(self.root, show="*")  # Mask the password input
-        self.entry_password1.grid(row=1, column=1, padx=5, pady=5)
+        #tk.Label(self.root, text="Globus Password:").grid(row=1, column=0, padx=5, pady=5, sticky="e")
+        #self.entry_password1 = tk.Entry(self.root, show="*")  # Mask the password input
+        #self.entry_password1.grid(row=1, column=1, padx=5, pady=5)
 
         self.result_label = tk.Label(self.root, text="——————————————————————\nLeave blank if same as Globus")
-        self.result_label.grid(row=2, column=0, columnspan=2, pady=5)
+        self.result_label.grid(row=1, column=0, columnspan=2, pady=5)
 
-        tk.Label(self.root, text="DataFed Username:").grid(row=3, column=0, padx=5, pady=5, sticky="e")
+        tk.Label(self.root, text="DataFed Username:").grid(row=2, column=0, padx=5, pady=5, sticky="e")
         self.entry_username2 = tk.Entry(self.root)
-        self.entry_username2.grid(row=3, column=1, padx=5, pady=5)
+        self.entry_username2.grid(row=2, column=1, padx=5, pady=5)
 
-        tk.Label(self.root, text="DataFed Password:").grid(row=4, column=0, padx=5, pady=5, sticky="e")
+        tk.Label(self.root, text="DataFed Password:").grid(row=3, column=0, padx=5, pady=5, sticky="e")
         self.entry_password2 = tk.Entry(self.root, show="*")  # Mask the password input
-        self.entry_password2.grid(row=4, column=1, padx=5, pady=5)
+        self.entry_password2.grid(row=3, column=1, padx=5, pady=5)
 
         self.submit_button = tk.Button(self.root, text="Submit", command=self.submit)
-        self.submit_button.grid(row=5, column=0, columnspan=2, pady=10)
+        self.submit_button.grid(row=4, column=0, columnspan=2, pady=10)
         self.root.bind('<Return>', self.submit)
 
         self.result_label = tk.Label(self.root, text="", fg="blue")
-        self.result_label.grid(row=6, column=0, columnspan=2, pady=5)
+        self.result_label.grid(row=5, column=0, columnspan=2, pady=5)
         self.g_username = ""
         self.g_password = ""
         self.df_username = ""
         self.df_password = ""
 
     def start(self):
+        envs={i[0]: i[1] for i in [i.split('=') for i in shlex.split(r'GCP_CONFIG_DIR="C:\Users\Joel\AppData\Local\Globus Connect" GCP_SSH_PATH="C:\Program Files (x86)\Globus Connect Personal\bin\ext\ssh.exe" GCP_PDEATH_PATH="C:\Program Files (x86)\Globus Connect Personal\bin\ext\pdeath.exe" GCP_RELAYTOOL_PATH="C:\Program Files (x86)\Globus Connect Personal\bin\ext\relaytool.exe" GCP_GRIDFTP_PATH="C:\Program Files (x86)\Globus Connect Personal\bin\globus-gridftp-server.exe" PYTHONPATH=""')]}
+        envs = envs | os.environ.copy()
+        self.process = subprocess.Popen(['C:\\Program Files (x86)\\Globus Connect Personal\\bin\\ext\\register\\register.exe', '--name', 'afm'], env=envs, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
+        for _ in range(7):
+            self.process.stdout.readline()
+        url = self.process.stdout.readline()
+        webbrowser.open(url)
         self.root.mainloop()
 
     def submit(self, *_):
         # Retrieve user inputs
-        self.g_username = self.entry_username1.get()
-        self.g_password = self.entry_password1.get()
+        self.g_code = self.entry_username1.get()
+        #self.g_password = self.entry_password1.get()
         self.df_username = self.entry_username2.get()
         self.df_password = self.entry_password2.get()
+        self.process.communicate(input=self.g_code)
+        #sleep(5)
+        #process.kill()
         self.root.destroy()
 
         #self.result_label.config(text=f"User 1: {self.username1}, " +
