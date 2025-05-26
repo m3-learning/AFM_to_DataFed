@@ -108,6 +108,7 @@ class LoginPrompt():
         #self.g_password = self.entry_password1.get()
         self.df_username = self.entry_username2.get()
         self.df_password = self.entry_password2.get()
+        datafed_login(self.df_username, self.df_password)
         self.process.communicate(input=self.g_code)
         #sleep(5)
         #process.kill()
