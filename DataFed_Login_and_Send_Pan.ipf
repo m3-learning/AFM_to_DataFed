@@ -12,7 +12,6 @@ Window DataFedSendPanel() : Panel
 	String/G coID
 	Variable/G currPolling = 0
 	pollingDir = SpecialDirPath("Temporary", 1, 0, 0)
-	CheckAndStartServer()
 	coID = "c/u_" + GetDataFedUser() + "_root"
 	NewPanel /K=1 /W=(1378,319,1906,1080) as "DataFed Login and Send"
 	ModifyPanel fixedSize=1
@@ -52,20 +51,26 @@ Window DataFedSendPanel() : Panel
 	SetWindow kwTopWin,userdata(DrawRectInfo)= A";IsC70W.E]AS#bT0W.6RF_.@)3AEEOVdEA6EbSruBmO>XBOPq&3i&Y"
 EndMacro
 
-Function CheckAPIServerRunning()
-	string message = DoAPICall("")
+Function CheckAPIServerRunning(message)
+	String message
 	variable result = !(strsearch(message, "The server is down", 0) >= 0)
 	return result
 End
 
-Function CheckAndStartServer()
-	TitleBox DirDisplay,title="hi"
-	if (!CheckAPIServerRunning())
-		String cmd = "fastapi run \"C:\Users\Asylum User\Documents\AFM_to_DataFed\local_server.py\""
-		//\rpause\r
-		RunDosCMD(cmd)
-		Sleep 0:0:4
-	endif
+Function CheckAPIServerRunningWithCall()
+	string message = DoAPICall("")
+	variable result = CheckAPIServerRunning(message)
+	return result
+End
+
+Function StartServer()
+	String cmd = "fastapi run \"C:\Users\Asylum User\Documents\AFM_to_DataFed\local_server.py\""
+	RunDosCMD(cmd)
+	Sleep 0:0:4
+End
+
+Function/S LogIntoDataFed()
+	return DoAPICall("login")
 End
 
 Function/S LogOutOfDataFed()
@@ -120,7 +125,13 @@ Function/S DoAPICallWithPB(apiExtension, postBody)
 	Open /R /T="TEXT" refNum as igorFile
 	FReadLine refNum, content
 	Close refNum
-	Return ExtractMessage(content)
+	String message = ExtractMessage(content)
+	if (!CheckAPIServerRunning(message))
+		StartServer()
+		return DoAPICallWithPB(apiExtension, postBody)
+	else
+		return message
+	endif
 End
 
 Function/S ExtractMessage(message)
@@ -187,9 +198,8 @@ End
 
 Function ButtonLoginProc(ctrlName) : ButtonControl
 	String ctrlName
-	DoAlert 0,"Logging into DataFed via this interface is not yet implemented"
+	LogIntoDataFed()
 End
-
 
 Function ButtonSendProc(ctrlName) : ButtonControl
 	 String ctrlName
