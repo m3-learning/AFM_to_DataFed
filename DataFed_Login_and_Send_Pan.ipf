@@ -12,6 +12,7 @@ Window DataFedSendPanel() : Panel
 	String/G coID
 	Variable/G currPolling = 0
 	pollingDir = SpecialDirPath("Temporary", 1, 0, 0)
+	CheckAndStartServer()
 	coID = "c/u_" + GetDataFedUser() + "_root"
 	NewPanel /K=1 /W=(1378,319,1906,1080) as "DataFed Login and Send"
 	ModifyPanel fixedSize=1
@@ -51,9 +52,20 @@ Window DataFedSendPanel() : Panel
 	SetWindow kwTopWin,userdata(DrawRectInfo)= A";IsC70W.E]AS#bT0W.6RF_.@)3AEEOVdEA6EbSruBmO>XBOPq&3i&Y"
 EndMacro
 
-Variable/S CheckAPIServerRunning()
+Function CheckAPIServerRunning()
 	string message = DoAPICall("")
-	return !(strsearch(message, "The server is down") >= 0)
+	variable result = !(strsearch(message, "The server is down", 0) >= 0)
+	return result
+End
+
+Function CheckAndStartServer()
+	TitleBox DirDisplay,title="hi"
+	if (!CheckAPIServerRunning())
+		String cmd = "fastapi run \"C:\Users\Asylum User\Documents\AFM_to_DataFed\local_server.py\""
+		//\rpause\r
+		RunDosCMD(cmd)
+		Sleep 0:0:4
+	endif
 End
 
 Function/S LogOutOfDataFed()
